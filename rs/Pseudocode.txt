@@ -1,0 +1,11 @@
+INPUT secret_number, is_guess_correct
+START
+IF is_guess_correct == true
+    PRINT "Good job"
+    PRINT "Do you want to play again?"
+    INPUT play_again
+    IF play_again == true
+        REPEAT game
+    ELSE 
+        END game
+        
