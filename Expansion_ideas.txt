@@ -1,0 +1,47 @@
+Guessing Game Expansion Ideas (Prioritized)
+===========================================
+
+1. Write unit and integration tests for all modules
+   - Ensure code reliability and maintainability by thoroughly testing all components.
+
+2. Refactor code for modularity and readability
+   - Improve the codebase structure to make it easier to maintain and extend.
+
+3. Document all public functions and modules
+   - Provide clear documentation for all code to help future contributors and users.
+
+4. Implement difficulty levels (easy/medium/hard)
+   - Allow players to select a difficulty, which could affect the guessing range, number of attempts, or hint availability.
+
+5. Allow user to set custom guessing range
+   - Give players the option to define their own minimum and maximum values for the secret number.
+
+6. Implement a hint system with limited uses
+   - Restrict the number of hints a player can use per game to increase challenge and strategy.
+
+7. Add a leaderboard to track high scores
+   - Implement a system to record and display the best scores achieved by players. This could be stored locally or online.
+
+8. Support multiple rounds and show stats at the end
+   - Let players play several rounds in a session and display statistics such as average guesses, wins, and losses.
+
+9. Add achievements or badges for milestones
+   - Reward players with achievements for reaching certain goals, such as consecutive wins or fast guesses.
+
+10. Add a timer for each guess and track fastest times
+    - Introduce a timer to measure how quickly players make guesses and keep records of the fastest rounds.
+
+11. Export game results to a file (CSV/JSON)
+    - Allow players to save their game history and statistics for later review.
+
+12. Add support for multiplayer (hotseat or networked)
+    - Enable multiple players to compete either on the same device or over a network.
+
+13. Create a GUI version using egui or another Rust GUI library
+    - Develop a graphical interface for the game to make it more accessible and visually appealing.
+
+14. Add localization/multi-language support
+    - Translate the game into multiple languages to reach a broader audience.
+
+15. Add sound effects for correct/incorrect guesses
+    - Enhance the user experience by playing sounds when a guess is right or wrong.
