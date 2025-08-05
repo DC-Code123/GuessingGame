@@ -9,7 +9,11 @@ pub fn gen_rand() -> f64 {
     return rng.random_range(1.0..=100.0);
 }
 
-
+///Handles multiple ending situations, which are:
+///-The player guesses correctly but wants to play again
+///-The player guesses correctly but doesn't want to play again
+///-The player guesses incorrectly but wants to play again
+///-The player guesses incorrectly but doesn't want to play again
 
 /// Provides an easy hint for the secret number
 fn easy_hint_chooser(secret_number: f64) {
@@ -521,6 +525,72 @@ pub fn choose_hint(op: &str, secret_number: f64) {
         Err(_) => {
             println!("Invalid input. Please enter a number (1, 2, or 3).", op);
             println!("Proceeding without hints.");
+        }
+    }
+}
+
+pub fn game_loop(op: &str,secret_number: f64){
+    // Provide hint based on user choice
+    choose_hint(&op, secret_number);
+
+    // Prompt for user guess
+    println!("Please enter your guess: ");
+
+    // Read user's guess
+    let mut guess = String::new();
+    io::stdin().read_line(&mut guess).expect("Failed to read line");
+
+    // Handle empty input
+    if guess.trim().is_empty() {
+        println!({},"No input provided, please enter a number.".red().bold());
+        continue;
+    }
+
+    // Parse guess into a float
+    let guess: f64 = match guess.trim().parse() {
+        Ok(num) => num,
+        Err(_) => {
+            println!({},"Invalid input, please enter a number.".red().bold());
+            continue;
+        }
+    };
+
+    // Validate guess is within range
+    if guess < 1.0 || guess > 100.0 {
+        println!({},"Please enter a number between 1 and 100.".red().bold());
+        continue;
+    }
+
+    // Display user's guess
+    println!("You inputted: {}", guess);
+
+    // Check if guess is correct
+    if (guess - secret_number).abs() < f64::EPSILON {
+        println!("Congratulations! You guessed the number!");
+    } else {
+        println!({},"Sorry, the secret number was: {}", secret_number.red().bold());
+    }
+
+    // Compare guess with secret number and provide feedback
+    match guess.partial_cmp(&secret_number).unwrap() {
+        Ordering::Less => {
+            println!(
+                "{} {}",
+                "Too small!".red(),
+                format!("The number was: {}", secret_number).yellow(),
+            );
+        }
+        Ordering::Greater => {
+            println!(
+                "{} {}",
+                "Too big!".red().bold(),
+                format!("The number was: {}", secret_number).yellow(),
+            );
+        }
+        Ordering::Equal => {
+            println!("{}", "You guessed it!".green().bold());
+            println!("The secret number was: {}", secret_number);
+            break;
         }
     }
 }
