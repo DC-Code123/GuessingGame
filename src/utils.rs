@@ -530,6 +530,7 @@ pub fn choose_hint(op: &str, secret_number: f64) {
 }
 
 pub fn game_loop(op: &str,secret_number: f64){
+    let attempt_number = attempt_number + 1;
     // Provide hint based on user choice
     choose_hint(&op, secret_number);
 
@@ -568,7 +569,7 @@ pub fn game_loop(op: &str,secret_number: f64){
     if (guess - secret_number).abs() < f64::EPSILON {
         println!("Congratulations! You guessed the number!");
     } else {
-        println!({},"Sorry, the secret number was: {}", secret_number.red().bold());
+        println!("Sorry. Try again!");
     }
 
     // Compare guess with secret number and provide feedback
@@ -577,20 +578,24 @@ pub fn game_loop(op: &str,secret_number: f64){
             println!(
                 "{} {}",
                 "Too small!".red(),
-                format!("The number was: {}", secret_number).yellow(),
             );
+            let guess_correct = false;
         }
         Ordering::Greater => {
             println!(
                 "{} {}",
                 "Too big!".red().bold(),
-                format!("The number was: {}", secret_number).yellow(),
             );
+            let guess_correct = false;
         }
         Ordering::Equal => {
             println!("{}", "You guessed it!".green().bold());
-            println!("The secret number was: {}", secret_number);
-            break;
+            let guess_correct = true;
         }
     }
+    return guess_correct;
+}
+
+pub fn end_situation_handler(){
+    
 }

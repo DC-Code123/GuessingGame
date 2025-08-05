@@ -5,18 +5,19 @@ use std::cmp::Ordering;
 // Import colored for colored terminal output
 use colored::Colorize;
 // Import utility functions from the utils module
-use crate::utils::{ gen_rand, choose_hint,game_loop };
+use crate::utils::{ gen_rand, choose_hint, game_loop, end_situation_handler };
 // Import the utils module
 mod utils;
 
 /// Main function that runs the number guessing game
-fn main() {
+/*fn main() {
     // Welcome message
     println!("Welcome to my guessing game!");
     println!("Please enter the maximum number for the guessing range:1-100");
 
     // Generate a random secret number
     // Note: gen_rand() now returns a f64 instead of i32
+    let attempt = 0;
     let secret_number = gen_rand();
     println!("A secret number has been generated between 1 and 100.");
 
@@ -46,5 +47,28 @@ fn main() {
             println!("Thank you for playing!");
             break;
         }
+    }
+}*/
+fn main() {
+    println!("Welcome to my guessing game!");
+    println!("Please enter the maximum number for the guessing range:1-100");
+
+    if played_again == true {
+        let attempt_number = 0;
+        println!("Ohh you are back!");
+        println!(
+            "Before we continue you need to choose whether you want an easy hint or a hard one or none"
+        );
+        println!(
+            "To choose select:\n1.Easy hint\n2.Hard hint(Math equation)\nIf you don't want a hint enter 3 or just click 'enter'"
+        );
+
+        // Read hint choice from user
+        let mut op = String::new();
+        io::stdin().read_line(&mut op).expect("Failed to read line");
+
+        game_loop(&op, secret_number);
+
+        end_situation_handler()
     }
 }
