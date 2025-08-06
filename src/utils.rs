@@ -2,6 +2,11 @@
 use rand::Rng;
 // Import random selection utilities
 use rand::prelude::IndexedRandom;
+// Import colored for colored terminal output
+use colored::Colorize;
+// Import standard I/O module for user input/output
+use std::io;
+use std::cmp::Ordering;  // Required for `Ordering` (Less, Greater, Equal)
 
 /// Generates a random number between 1.0 and 100.0 (inclusive)
 pub fn gen_rand() -> f64 {
@@ -14,6 +19,14 @@ pub fn gen_rand() -> f64 {
 ///-The player guesses correctly but doesn't want to play again
 ///-The player guesses incorrectly but wants to play again
 ///-The player guesses incorrectly but doesn't want to play again
+fn end_situation_handler(guessed_correct: bool){
+    if guess_correct == true {
+        println!("Goodjob you guessed it!");
+        println!("Do you want to play again(y/yes,n/no)");
+        let input = String::new();
+
+    }
+}
 
 /// Provides an easy hint for the secret number
 fn easy_hint_chooser(secret_number: f64) {
@@ -523,7 +536,7 @@ pub fn choose_hint(op: &str, secret_number: f64) {
                 }
             }
         Err(_) => {
-            println!("Invalid input. Please enter a number (1, 2, or 3).", op);
+            println!("Invalid input. Please enter a number (1, 2, or 3).");
             println!("Proceeding without hints.");
         }
     }
@@ -543,7 +556,7 @@ pub fn game_loop(op: &str,secret_number: f64){
 
     // Handle empty input
     if guess.trim().is_empty() {
-        println!({},"No input provided, please enter a number.".red().bold());
+        println!("{}","No input provided, please enter a number.".red().bold());
         continue;
     }
 
@@ -551,14 +564,14 @@ pub fn game_loop(op: &str,secret_number: f64){
     let guess: f64 = match guess.trim().parse() {
         Ok(num) => num,
         Err(_) => {
-            println!({},"Invalid input, please enter a number.".red().bold());
+            println!("{:?}", "Invalid input, please enter a number.".red().bold());
             continue;
         }
     };
 
     // Validate guess is within range
     if guess < 1.0 || guess > 100.0 {
-        println!({},"Please enter a number between 1 and 100.".red().bold());
+        println!("{}","Please enter a number between 1 and 100.".red().bold());
         continue;
     }
 
@@ -576,14 +589,14 @@ pub fn game_loop(op: &str,secret_number: f64){
     match guess.partial_cmp(&secret_number).unwrap() {
         Ordering::Less => {
             println!(
-                "{} {}",
+                "{}",
                 "Too small!".red(),
             );
             let guess_correct = false;
         }
         Ordering::Greater => {
             println!(
-                "{} {}",
+                "{}",
                 "Too big!".red().bold(),
             );
             let guess_correct = false;
@@ -593,9 +606,6 @@ pub fn game_loop(op: &str,secret_number: f64){
             let guess_correct = true;
         }
     }
-    return guess_correct;
+    end_situation_handler(guess_correct);
 }
 
-pub fn end_situation_handler(){
-    
-}

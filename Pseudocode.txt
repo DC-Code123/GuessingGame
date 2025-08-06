@@ -1,0 +1,15 @@
+Handles multiple ending situations, which are:
+-The player guesses correctly but wants to play again
+-The player guesses correctly but doesn't want to play again
+-The player guesses incorrectly but wants to play again
+-The player guesses incorrectly but doesn't want to play again
+
+INPUT secret_number
+INPUT guess_correct
+INPUT attempt_number
+START
+\\first check if player guessed secret_number 
+IF guess_correct = true THEN
+	
+END IF	
+END

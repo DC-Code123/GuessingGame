@@ -1,11 +1,9 @@
 // Import standard I/O module for user input/output
 use std::io;
 // Import Ordering for comparison operations
-use std::cmp::Ordering;
-// Import colored for colored terminal output
-use colored::Colorize;
+use std::Ordering
 // Import utility functions from the utils module
-use crate::utils::{ gen_rand, choose_hint, game_loop, end_situation_handler };
+use crate::utils::{ game_loop };
 // Import the utils module
 mod utils;
 
@@ -67,8 +65,8 @@ fn main() {
         let mut op = String::new();
         io::stdin().read_line(&mut op).expect("Failed to read line");
 
-        game_loop(&op, secret_number);
-
-        end_situation_handler()
+        loop{
+            game_loop(&op, secret_number);
+        }
     }
 }
