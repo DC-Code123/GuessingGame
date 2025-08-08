@@ -29,7 +29,7 @@ pub fn end_situation_handler(is_guess_correct: i32, attempts: i32) -> i32{
         if input.trim().is_empty(){
             println!("{}","No input provided, please enter a number.".red().bold());
             return 2;
-        } else{}
+        } else{}//TODO:Add implementaion
     }
 }
 
