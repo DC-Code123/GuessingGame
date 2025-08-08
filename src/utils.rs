@@ -19,12 +19,17 @@ pub fn gen_rand() -> f64 {
 ///-The player guesses correctly but doesn't want to play again
 ///-The player guesses incorrectly but wants to play again
 ///-The player guesses incorrectly but doesn't want to play again
-fn end_situation_handler(guessed_correct: bool){
-    if guess_correct == true {
+pub fn end_situation_handler(is_guess_correct: i32, attempts: i32) -> i32{
+    if is_guess_correct == 1 {
         println!("Goodjob you guessed it!");
+        println!("You guessed It after: {} attempts", attempts);
         println!("Do you want to play again(y/yes,n/no)");
-        let input = String::new();
-
+        let mut input = String::new();
+        io::stdin().read_line(&mut input).expect("Failed to read line");
+        if input.trim().is_empty(){
+            println!("{}","No input provided, please enter a number.".red().bold());
+            return 2;
+        } else{}
     }
 }
 
@@ -542,70 +547,75 @@ pub fn choose_hint(op: &str, secret_number: f64) {
     }
 }
 
-pub fn game_loop(op: &str,secret_number: f64){
-    let attempt_number = attempt_number + 1;
-    // Provide hint based on user choice
-    choose_hint(&op, secret_number);
+pub fn game_loop(op: &str,secret: f64, mut attempts: i32) -> (i32,i32) {
+    loop{
+        attempts += 1;
+        // Provide hint based on user choice
+        choose_hint(&op, secret);
 
-    // Prompt for user guess
-    println!("Please enter your guess: ");
+        // Prompt for user guess
+        println!("Please enter the maximum number for the guessing range:1-100");
+        println!("Please enter your guess: ");
 
-    // Read user's guess
-    let mut guess = String::new();
-    io::stdin().read_line(&mut guess).expect("Failed to read line");
+        // Read user's guess
+        let mut guess = String::new();
+        io::stdin().read_line(&mut guess).expect("Failed to read line");
 
-    // Handle empty input
-    if guess.trim().is_empty() {
-        println!("{}","No input provided, please enter a number.".red().bold());
-        continue;
-    }
-
-    // Parse guess into a float
-    let guess: f64 = match guess.trim().parse() {
-        Ok(num) => num,
-        Err(_) => {
-            println!("{:?}", "Invalid input, please enter a number.".red().bold());
+        // Handle empty input
+        if guess.trim().is_empty() {
+            println!("{}","No input provided, please enter a number.".red().bold());
             continue;
         }
-    };
 
-    // Validate guess is within range
-    if guess < 1.0 || guess > 100.0 {
-        println!("{}","Please enter a number between 1 and 100.".red().bold());
-        continue;
-    }
+        // Parse guess into a float
+        let guess: f64 = match guess.trim().parse() {
+            Ok(num) => num,
+            Err(_) => {
+                println!("{:?}", "Invalid input, please enter a number.".red().bold());
+                continue;
+            }
+        };
 
-    // Display user's guess
-    println!("You inputted: {}", guess);
-
-    // Check if guess is correct
-    if (guess - secret_number).abs() < f64::EPSILON {
-        println!("Congratulations! You guessed the number!");
-    } else {
-        println!("Sorry. Try again!");
-    }
-
-    // Compare guess with secret number and provide feedback
-    match guess.partial_cmp(&secret_number).unwrap() {
-        Ordering::Less => {
-            println!(
-                "{}",
-                "Too small!".red(),
-            );
-            let guess_correct = false;
+        // Validate guess is within range
+        if guess < 1.0 || guess > 100.0 {
+            println!("{}","Please enter a number between 1 and 100.".red().bold());
+            continue;
         }
-        Ordering::Greater => {
-            println!(
-                "{}",
-                "Too big!".red().bold(),
-            );
-            let guess_correct = false;
+
+        // Display user's guess
+        println!("You inputted: {}", guess);
+
+        // Check if guess is correct
+        if (guess - secret).abs() < f64::EPSILON {
+            println!("Congratulations! You guessed the number!");
+        } else {
+            println!("Sorry. Try again!");
         }
-        Ordering::Equal => {
-            println!("{}", "You guessed it!".green().bold());
-            let guess_correct = true;
+
+        // Compare guess with secret number and provide feedback
+        match guess.partial_cmp(&secret).unwrap() {
+            Ordering::Less => {
+                println!(
+                    "{}",
+                    "Too small!".red(),
+                );
+                let guess_correct = 0;
+                return (guess_correct, attempts);
+            }
+            Ordering::Greater => {
+                println!(
+                    "{}",
+                    "Too big!".red().bold(),
+                );
+                let guess_correct = 0;
+                return (guess_correct, attempts);
+            }
+            Ordering::Equal => {
+                println!("{}", "You guessed it!".green().bold());
+                let guess_correct = 1;
+                return (guess_correct, attempts);
+            }
         }
     }
-    end_situation_handler(guess_correct);
 }
 
