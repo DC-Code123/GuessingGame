@@ -1,50 +1,62 @@
-// Import random number generation utilities
+//! Game utilities module
+//!
+//! Contains all core game logic components:
+//! - Number generation
+//! - Hint systems
+//! - Game state management
+
 use rand::Rng;
-// Import random selection utilities
-use rand::prelude::IndexedRandom;
-// Import colored for colored terminal output
+use rand::seq::SliceRandom; // Import the trait for choose()
 use colored::Colorize;
-// Import standard I/O module for user input/output
 use std::io;
-use std::cmp::Ordering;  // Required for `Ordering` (Less, Greater, Equal)
+use std::cmp::Ordering;
 
-/// Generates a random number between 1.0 and 100.0 (inclusive)
+/// Generates random number between 1.0 and 100.0
+/// Uses thread-local random number generator
 pub fn gen_rand() -> f64 {
-    let mut rng = rand::rng();
-    return rng.random_range(1.0..=100.0);
+    rand::rng().random_range(1.0..=100.0)
 }
 
-///Handles multiple ending situations, which are:
-///-The player guesses correctly but wants to play again
-///-The player guesses correctly but doesn't want to play again
-///-The player guesses incorrectly but wants to play again
-///-The player guesses incorrectly but doesn't want to play again
-pub fn end_situation_handler(is_guess_correct: i32, attempts: i32) -> i32{
-    if is_guess_correct == 1 {
-        println!("Goodjob you guessed it!");
-        println!("You guessed It after: {} attempts", attempts);
-        println!("Do you want to play again(y/yes,n/no)");
-        let mut input = String::new();
-        io::stdin().read_line(&mut input).expect("Failed to read line");
-        if input.trim().is_empty(){
-            println!("{}","No input provided, please enter a number.".red().bold());
-            return 2;
-        } else{}//TODO:Add implementaion
+/// Handles game end scenarios
+/// Parameters:
+///   is_guess_correct: bool - whether player guessed correctly
+///   attempts: i32 - number of attempts made
+/// Returns:
+///   1 to continue, 0 to quit
+pub fn end_situation_handler(is_guess_correct: bool, attempts: i32) -> i32 {
+    // Show appropriate win/lose message
+    if is_guess_correct {
+        println!("{}", format!("You won in {} attempts!", attempts).green().bold());
+    } else {
+        println!("{}", format!("Game over after {} attempts.", attempts).red().bold());
     }
+    
+    // Prompt for next action
+    println!("\nWould you like to play again?");
+    print!("1 = Yes, 0 = No: ");
+    
+    let mut choice = String::new();
+    io::stdin().read_line(&mut choice).expect("Failed to read input");
+    
+    // Parse input, default to quit on error
+    choice.trim().parse().unwrap_or(0)
 }
 
-/// Provides an easy hint for the secret number
+/// Provides easy hints using simple arithmetic
+/// Parameters:
+///   secret_number: f64 - the target number to hint toward
 fn easy_hint_chooser(secret_number: f64) {
-    // Each tuple: (hint string, closure to compute value)
+    // Collection of possible hint formats and their calculations
+    let expressions: Vec<(&str, Box<dyn Fn(f64) -> f64>)> =  vec![
+        //every tuples format:
+        //(hint(string), Box::new(|x| (the actual calculation logic))),
+        // Each tuple: (hint string, closure to compute value)
     /*
      * Define a vector of tuples containing easy hint strings and their corresponding calculations
      * Each tuple contains:
      * - A hint string with a placeholder for the computed value
      * - A closure that computes the hint value based on the secret number
      */
-    let expressions: Vec<(&str, Box<dyn Fn(f64) -> f64>)> = vec![
-        //every tuples format:
-        //(hint(string), Box::new(|x| (the actual calculation logic))),
         ("The secret number is 5 positive steps from {}", Box::new(|x| x - 5.0)),
         ("The secret number is 45 negative steps from {}", Box::new(|x| x + 45.0)),
         ("The secret number is 10 positive steps from {}", Box::new(|x| x - 10.0)),
@@ -170,25 +182,25 @@ fn easy_hint_chooser(secret_number: f64) {
             Box::new(|x| x + 16.0 + 8.0),
         )
     ];
-
-    // Randomly select a hint
+    
+    // Randomly select and display one hint
     let mut rng = rand::rng();
     let (hint, expr) = expressions.choose(&mut rng).unwrap();
-
-    // Display the selected hint with the computed value
-    print!("Hint chosen: ");
-    println!("HINT: {} = {:.2}", hint, expr(secret_number));
+    println!("{}: {} = {:.2}", "Easy Hint".blue(), hint, expr(secret_number));
 }
 
-/// Provides a hard mathematical hint for the secret number
+/// Provides complex mathematical hints
+/// Parameters:
+///   secret_number: f64 - the target number to hint toward
 fn hard_hint_chooser(secret_number: f64) {
-    // Each tuple: (hint string, closure to compute value)
+     // Each tuple: (hint string, closure to compute value)
     /*
      * Define a vector of tuples containing hard hint strings and their corresponding calculations
      * Each tuple contains:
      * - A complex mathematical expression as a hint string
      * - A closure that computes the hint value based on the secret number
      */
+    // Collection of complex equation hints
     let expressions: Vec<(&str, Box<dyn Fn(f64) -> f64>)> = vec![
         (
             "(x^2 - 3)×4 + (x^3÷2 - 7) = {}",
@@ -502,120 +514,70 @@ fn hard_hint_chooser(secret_number: f64) {
         ("x/2 + 3 = {}", Box::new(|x| x / 2.0 + 3.0)),
         ("(x + 1)/3 = {}", Box::new(|x| (x + 1.0) / 3.0))
     ];
-
-    // Randomly select a hint
+    
+    // Randomly select and display one hint
     let mut rng = rand::rng();
     let (hint, expr) = expressions.choose(&mut rng).unwrap();
-
-    // Display the selected hint with the computed value
-    print!("Hint chosen: ");
-    println!("HINT: {} = {:.2}", hint, expr(secret_number));
+    println!("{}: {} = {:.2}", "Hard Hint".purple(), hint, expr(secret_number));
 }
 
-/// Handles hint selection based on user input
-/// # Arguments
-/// * `op` - The user's input for hint selection (1 for easy, 2 for hard, 3 or empty for none)
-/// * `secret_number` - The secret number to generate hints for
+/// Displays hint based on player's choice
+/// Parameters:
+///   op: &str - player's hint selection ("1", "2", or other)
+///   secret_number: f64 - number to generate hints for
 pub fn choose_hint(op: &str, secret_number: f64) {
-    match op.trim().parse::<i32>() {
-        Ok(num) =>
-            match num {
-                1 => {
-                    println!("You chose an easy hint!!");
-                    println!("Here you go!!");
-                    easy_hint_chooser(secret_number);
-                }
-                2 => {
-                    println!(
-                        "You chose a hard hint!!\nThe hard hints are mathematical, so be prepared with a calculator"
-                    );
-                    println!("Here you go!!");
-                    hard_hint_chooser(secret_number);
-                }
-                3 => {
-                    println!("Good luck!!\nProceeding without any hints");
-                }
-                _ => {
-                    println!("Invalid choice: {}. Please enter 1, 2, or 3.", num);
-                    println!("Proceeding without hints.");
-                }
-            }
-        Err(_) => {
-            println!("Invalid input. Please enter a number (1, 2, or 3).");
-            println!("Proceeding without hints.");
-        }
+    match op.trim() {
+        "1" => {
+            println!("{}", "Easy hint selected!".blue());
+            easy_hint_chooser(secret_number);
+        },
+        "2" => {
+            println!("{}", "Hard hint selected! Calculator recommended.".purple());
+            hard_hint_chooser(secret_number);
+        },
+        _ => println!("{}", "No hints - good luck!".yellow()),
     }
 }
 
-pub fn game_loop(op: &str,secret: f64, mut attempts: i32) -> (i32,i32) {
-    loop{
+/// Manages the core guessing loop
+/// Parameters:
+///   op: &str - hint choice
+///   secret: f64 - target number
+///   attempts: i32 - current attempt count
+/// Returns:
+///   Tuple of (success: bool, total_attempts: i32)
+pub fn game_loop(secret: f64, mut attempts: i32) -> (bool, i32) {
+    loop {
         attempts += 1;
-        // Provide hint based on user choice
-        choose_hint(&op, secret);
-
-        // Prompt for user guess
-        println!("Please enter the maximum number for the guessing range:1-100");
-        println!("Please enter your guess: ");
-
-        // Read user's guess
+        println!("\nAttempt #{}", attempts);
+        
+        // Get and validate player's guess
+        print!("Enter your guess (1-100): ");
         let mut guess = String::new();
-        io::stdin().read_line(&mut guess).expect("Failed to read line");
-
-        // Handle empty input
-        if guess.trim().is_empty() {
-            println!("{}","No input provided, please enter a number.".red().bold());
-            continue;
-        }
-
-        // Parse guess into a float
+        io::stdin().read_line(&mut guess).expect("Failed to read input");
+        
         let guess: f64 = match guess.trim().parse() {
-            Ok(num) => num,
-            Err(_) => {
-                println!("{:?}", "Invalid input, please enter a number.".red().bold());
+            Ok(num) if (1.0..=100.0).contains(&num) => num,
+            _ => {
+                println!("{}", "Invalid input. Please enter 1-100".red());
                 continue;
             }
         };
-
-        // Validate guess is within range
-        if guess < 1.0 || guess > 100.0 {
-            println!("{}","Please enter a number between 1 and 100.".red().bold());
-            continue;
-        }
-
-        // Display user's guess
-        println!("You inputted: {}", guess);
-
-        // Check if guess is correct
-        if (guess - secret).abs() < f64::EPSILON {
-            println!("Congratulations! You guessed the number!");
-        } else {
-            println!("Sorry. Try again!");
-        }
-
-        // Compare guess with secret number and provide feedback
+        
+        // Compare guess to secret number
         match guess.partial_cmp(&secret).unwrap() {
             Ordering::Less => {
-                println!(
-                    "{}",
-                    "Too small!".red(),
-                );
-                let guess_correct = 0;
-                return (guess_correct, attempts);
-            }
+                println!("{}", "Too small!".red());
+                return (false, attempts);
+            },
             Ordering::Greater => {
-                println!(
-                    "{}",
-                    "Too big!".red().bold(),
-                );
-                let guess_correct = 0;
-                return (guess_correct, attempts);
-            }
+                println!("{}", "Too big!".red());
+                return (false, attempts);
+            },
             Ordering::Equal => {
-                println!("{}", "You guessed it!".green().bold());
-                let guess_correct = 1;
-                return (guess_correct, attempts);
+                println!("{}", "Correct! You guessed it!".green().bold());
+                return (true, attempts);
             }
         }
     }
 }
-
