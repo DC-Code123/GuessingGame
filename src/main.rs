@@ -1,73 +1,106 @@
-// Import standard I/O module for user input/output
+//! Main entry point for the number guessing game
+//! 
+//! This implements a complete guessing game where:
+//! - A random number between 1.0-100.0 is generated
+//! - Players guess with optional hints
+//! - Supports retrying with same or new numbers
+
 use std::io;
-// Import Ordering for comparison operations
-// Import utility functions from the utils module
-use crate::utils::{ game_loop, gen_rand, end_situation_handler };
-// Import the utils module
+use std::process::exit;
+use crate::utils::{game_loop, gen_rand, end_situation_handler, choose_hint};
 mod utils;
 
 fn main() {
-    let mut attempt_number = 0;
-    /*
-        1 = true(Play again == another attempt)
-        0 = false(Start again)
-        2 = ERROR(Start again)
-     */
-    let mut played_again = 1;
-    let mut secret_number: f64 = 0.0;
+    // Print game introduction
+    println!("Welcome to the Fantastic Number Guessing Game!");
+    println!("=============================================");
+    println!("A random number between 1.0 and 100.0 will be generated.");
+    println!("Try to guess it with optional hints to help you!\n");
 
-    if played_again == 0 || played_again == 2 {
-        println!("Welcome to my guessing game!");
-        println!("This is a guessing game that is pretty fanastic");
-        println!("Let's begin");
-        secret_number = gen_rand();
-        println!("A random number has been generated");
-        println!(
-            "Before we continue you need to choose whether you want an easy hint or a hard one or none"
-        );
-        println!(
-            "To choose select:\n1. Easy hint\n2. Hard hint(Math equation)\nIf you don't want a hint enter 3 or just click 'enter'"
-        );
+    // Main game loop - runs until player chooses to quit
+    'game: loop {
+        // Generate new secret number for each game session
+        let secret_number = gen_rand();
+        let mut attempts = 0;
+        println!("\nNew game started! A secret number has been generated.");
 
-        // Read hint choice from user
-        let mut op = String::new();
-        io::stdin().read_line(&mut op).expect("Failed to read line");
+        // Retry loop - allows playing same number multiple times
+        'retry: loop {
+            // Get player's hint preference
+            let hint_choice = get_hint_choice();
+            
+            // Show selected hint type
+            choose_hint(&hint_choice, secret_number);
 
-        loop{
-            let (guess_correct, attempt_number) = game_loop(&op, secret_number, attempt_number);
-            played_again = end_situation_handler(guess_correct, attempt_number);
-            if played_again == 2 {
-                eprintln!("Error detected!");
-                break;
+            // Run one full game round and get results
+            let (guess_correct, new_attempts) = game_loop(secret_number, attempts);
+            attempts = new_attempts;
+
+            // Handle post-game choices
+            match end_situation_handler(guess_correct, attempts) {
+                1 => { // Player wants to continue
+                    match get_retry_choice() {
+                        1 => { // Retry same number
+                            println!("\nContinuing with same number. Attempts reset.");
+                            continue 'retry;
+                        },
+                        2 => { // Get new number
+                            println!("\nGenerating new number...");
+                            continue 'game;
+                        },
+                        0 => { // Quit game
+                            exit_game();
+                        },
+                        _ => { // Invalid input
+                            println!("Invalid choice. Starting new game.");
+                            continue 'game;
+                        }
+                    }
+                },
+                0 => { // Player chose to quit
+                    exit_game();
+                },
+                _ => { // Error case
+                    println!("Unexpected error. Exiting.");
+                    exit(1);
+                }
             }
         }
     }
+}
 
-    else if played_again == 1 {
-        attempt_number += 1;
-        println!(
-            "Before we continue you need to choose whether you want an easy hint or a hard one or none"
-        );
-        println!(
-            "To choose select:\n1. Easy hint\n2. Hard hint(Math equation)\nIf you don't want a hint enter 3 or just click 'enter'"
-        );
-
-        // Read hint choice from user
-        let mut op = String::new();
-        io::stdin().read_line(&mut op).expect("Failed to read line");
-
-        loop{
-            let (guess_correct, attempt_number) = game_loop(&op, secret_number, attempt_number);
-            played_again = end_situation_handler(guess_correct, attempt_number);
-            if played_again == 2 {
-                eprintln!("Error detected!");
-                break;
-            }
-        }
-    }
+/// Prompts player to select hint type
+/// Returns:
+///   String containing their choice ("1", "2", or "3")
+fn get_hint_choice() -> String {
+    println!("\nChoose a hint option:");
+    println!("1. Easy hint (simple arithmetic)");
+    println!("2. Hard hint (complex equations)");
+    println!("3. No hints (I'm feeling lucky!)");
+    print!("Your choice (1-3, default 3): ");
     
-    else {
-        println!("PROGRAMMING ERROR: CONTACT THE DEV for an error like this!!");
-    }
+    let mut choice = String::new();
+    io::stdin().read_line(&mut choice).expect("Failed to read input");
+    choice
+}
 
+/// Gets player's choice after game ends
+/// Returns:
+///   1 = same number, 2 = new number, 0 = quit
+fn get_retry_choice() -> i32 {
+    println!("\nWhat would you like to do next?");
+    println!("1. Try same number again");
+    println!("2. Get a new random number");
+    println!("0. Quit game");
+    print!("Your choice (0-2): ");
+    
+    let mut choice = String::new();
+    io::stdin().read_line(&mut choice).expect("Failed to read input");
+    choice.trim().parse().unwrap_or(0) // Default to 0 (quit) on invalid input
+}
+
+/// Cleanly exits the game with farewell message
+fn exit_game() {
+    println!("\nThank you for playing! Goodbye!");
+    exit(0);
 }
