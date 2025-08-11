@@ -1,538 +1,453 @@
 //! Game utilities module
 //!
-//! Contains all game logic including:
-//! - Random number generation
+//! Contains all core game logic components:
+//! - Number generation
 //! - Hint systems
-//! - Game loop handling
-//! - End game scenarios
+//! - Game state management
 
 use rand::Rng;
-use rand::prelude::IndexedRandom;
+use rand::seq::IndexedRandom;
 use colored::Colorize;
 use std::io;
 use std::cmp::Ordering;
 
-/// Generates a random f64 between 1.0 and 100.0 (inclusive)
-/// 
-/// # Examples
-/// ```
-/// let num = gen_rand();
-/// assert!(num >= 1.0 && num <= 100.0);
-/// ```
+/// Generates random number between 1.0 and 100.0
+/// Uses thread-local random number generator
 pub fn gen_rand() -> f64 {
     rand::rng().random_range(1.0..=100.0)
 }
 
-/// Handles game end scenarios and prompts player for next action
-/// 
-/// # Arguments
-/// * `is_guess_correct` - Whether the player guessed correctly
-/// * `attempts` - Number of attempts made
-/// 
-/// # Returns
-/// * `1` if player wants to continue
-/// * `0` if player wants to quit
+/// Handles game end scenarios
+/// Parameters:
+///   is_guess_correct: bool - whether player guessed correctly
+///   attempts: i32 - number of attempts made
+/// Returns:
+///   1 to continue, 0 to quit
 pub fn end_situation_handler(is_guess_correct: bool, attempts: i32) -> i32 {
+    // Show appropriate win/lose message
     if is_guess_correct {
         println!("{}", format!("You won in {} attempts!", attempts).green().bold());
     } else {
-        println!("{}", format!("Game over after {} attempts.", attempts).red().bold());
+        println!("{}", format!("Unfortunately, you lost on the {} attempt(s).", attempts).red().bold());
     }
     
+    // Prompt for next action
     println!("\nWould you like to play again?");
-    print!("1 = Yes, 0 = No: ");
+    println!("1 = Yes, 0 = No: ");
     
     let mut choice = String::new();
     io::stdin().read_line(&mut choice).expect("Failed to read input");
     
-    match choice.trim().parse() {
-        Ok(1) => 1,
-        Ok(0) => 0,
-        _ => {
-            println!("Invalid input. Ending game.");
-            0
-        }
-    }
+    // Parse input, default to quit on error
+    choice.trim().parse().unwrap_or(0)
 }
 
-/// Provides an easy hint for the secret number
-/// 
-/// Hints use simple arithmetic operations to guide the player
-/// Each tuple: (hint string, closure to compute value)
-/*
- * Define a vector of tuples containing easy hint strings and their corresponding calculations
- * Each tuple contains:
- * - A hint string with a placeholder for the computed value
- * - A closure that computes the hint value based on the secret number
- */
+/// Provides easy hints using simple arithmetic
+/// Parameters:
+///   secret_number: f64 - the target number to hint toward
 fn easy_hint_chooser(secret_number: f64) {
-    let expressions: Vec<(&str, Box<dyn Fn(f64) -> f64>)> = vec![
-        //every tuples format:
-        //(hint(string), Box::new(|x| (the actual calculation logic))),
-        ("The secret number is 5 positive steps from {}", Box::new(|x| x - 5.0)),
-        ("The secret number is 45 negative steps from {}", Box::new(|x| x + 45.0)),
-        ("The secret number is 10 positive steps from {}", Box::new(|x| x - 10.0)),
-        ("The secret number is 20 negative steps from {}", Box::new(|x| x + 20.0)),
-        ("The secret number is 15 positive steps from {}", Box::new(|x| x - 15.0)),
-        ("The secret number is 30 negative steps from {}", Box::new(|x| x + 30.0)),
-        ("The secret number is 12 positive steps from {}", Box::new(|x| x - 12.0)),
-        ("The secret number is 18 negative steps from {}", Box::new(|x| x + 18.0)),
-        ("The secret number is 22 positive steps from {}", Box::new(|x| x - 22.0)),
-        ("The secret number is 28 negative steps from {}", Box::new(|x| x + 28.0)),
-        ("The secret number is 14 positive steps from {}", Box::new(|x| x - 14.0)),
+    // Collection of possible hint formats and their calculations
+    let expressions: Vec<(&str, Box<dyn Fn(f64) -> f64>)> =  vec![
+    //every tuples format:
+    //(hint(string), Box::new(|x| (the actual calculation logic))),
+    // Each tuple: (hint string, closure to compute value)
+    /*
+     * Define a vector of tuples containing easy hint strings and their corresponding calculations
+     * Each tuple contains:
+     * - A hint string with a placeholder for the computed value
+     * - A closure that computes the hint value based on the secret number
+     */
+        ("The secret number is 5 positive steps from {}", Box::new(|x| x - 5.0)), // Simplified formula: S = N + 5
+        ("The secret number is 45 negative steps from {}", Box::new(|x| x + 45.0)), // Simplified formula: S = N - 45
+        ("The secret number is 10 positive steps from {}", Box::new(|x| x - 10.0)), // Simplified formula: S = N + 10
+        ("The secret number is 20 negative steps from {}", Box::new(|x| x + 20.0)), // Simplified formula: S = N - 20
+        ("The secret number is 15 positive steps from {}", Box::new(|x| x - 15.0)), // Simplified formula: S = N + 15
+        ("The secret number is 30 negative steps from {}", Box::new(|x| x + 30.0)), // Simplified formula: S = N - 30
+        ("The secret number is 12 positive steps from {}", Box::new(|x| x - 12.0)), // Simplified formula: S = N + 12
+        ("The secret number is 18 negative steps from {}", Box::new(|x| x + 18.0)), // Simplified formula: S = N - 18
+        ("The secret number is 22 positive steps from {}", Box::new(|x| x - 22.0)), // Simplified formula: S = N + 22
+        ("The secret number is 28 negative steps from {}", Box::new(|x| x + 28.0)), // Simplified formula: S = N - 28
+        ("The secret number is 14 positive steps from {}", Box::new(|x| x - 14.0)), // Simplified formula: S = N + 14
         (
-            "A number x² is 25 positive steps from the secret number(x is {})",
-            Box::new(|x| x.sqrt() - 25.0),
+            "A number S² is 25 positive steps from the secret number(S is {})",
+            Box::new(|x| x.sqrt() - 25.0), // Simplified formula: S = (N + 25)²
         ),
         (
-            "A number x³ is 10 negative steps from the secret number(x is {})",
-            Box::new(|x| x.cbrt() + 10.0),
+            "A number S³ is 10 negative steps from the secret number(S is {})",
+            Box::new(|x| x.cbrt() + 10.0), // Simplified formula: S = (N - 10)³
         ),
-        ("A number x + 3 is 5 positive steps from the secret number", Box::new(|x| x - 5.0 - 3.0)),
+        ("A number S + 3 is 5 positive steps from the secret number", Box::new(|x| x - 5.0 - 3.0)), // Simplified formula: S = N + 8
         (
-            "A number x - 4 is 20 negative steps from the secret number",
-            Box::new(|x| x + 20.0 + 4.0),
-        ),
-        (
-            "A number x * 2 is 15 positive steps from the secret number",
-            Box::new(|x| x / 2.0 - 15.0),
+            "A number S - 4 is 20 negative steps from the secret number",
+            Box::new(|x| x + 20.0 + 4.0), // Simplified formula: S = N - 24
         ),
         (
-            "A number x / 3 is 30 negative steps from the secret_number",
-            Box::new(|x| x * 3.0 + 30.0),
+            "A number S * 2 is 15 positive steps from the secret number",
+            Box::new(|x| x / 2.0 - 15.0), // Simplified formula: S = 2(N + 15)
         ),
         (
-            "The secret number is 8 positive steps from the number x + 1",
-            Box::new(|x| x - 8.0 - 1.0),
+            "A number S / 3 is 30 negative steps from the secret_number",
+            Box::new(|x| x * 3.0 + 30.0), // Simplified formula: S = (N - 30) / 3
         ),
         (
-            "A number is called p = x - 2^3 and that number is 24 negative steps from the secret_number",
-            Box::new(|x| x - 8.0 + 24.0),
+            "The secret number is 8 positive steps from the number S + 1",
+            Box::new(|x| x - 8.0 - 1.0), // Simplified formula: S = N + 9
         ),
         (
-            "The secret number is 16 negative steps from the number x + 4",
-            Box::new(|x| x + 16.0 - 4.0),
+            "A number is called p = S - 2^3 and that number is 24 negative steps from the secret_number",
+            Box::new(|x| x - 8.0 + 24.0), // Simplified formula: S = N - 16
         ),
         (
-            "The secret number is 32 positive steps from the number x * 5",
-            Box::new(|x| x / 5.0 - 32.0),
+            "The secret number is 16 negative steps from the number S + 4",
+            Box::new(|x| x + 16.0 - 4.0), // Simplified formula: S = N - 12
         ),
         (
-            "The secret number is 6 negative steps from the number x / 6",
-            Box::new(|x| x * 6.0 + 6.0),
+            "The secret number is 32 positive steps from the number S * 5",
+            Box::new(|x| x / 5.0 - 32.0), // Simplified formula: S = 5(N + 32)
         ),
         (
-            "The secret number is 10 positive steps from the number x + 2",
-            Box::new(|x| x - 10.0 - 2.0),
+            "The secret number is 6 negative steps from the number S / 6",
+            Box::new(|x| x * 6.0 + 6.0), // Simplified formula: S = (N - 6) / 6
         ),
         (
-            "The secret number is 20 negative steps from the number x - 3",
-            Box::new(|x| x + 20.0 + 3.0),
+            "The secret number is 10 positive steps from the number S + 2",
+            Box::new(|x| x - 10.0 - 2.0), // Simplified formula: S = N + 12
         ),
         (
-            "The secret number is 16 positive steps from the number x * 4",
-            Box::new(|x| x / 4.0 - 16.0),
+            "The secret number is 20 negative steps from the number S - 3",
+            Box::new(|x| x + 20.0 + 3.0), // Simplified formula: S = N - 23
         ),
         (
-            "The secret number is 32 negative steps from the number x / 5",
-            Box::new(|x| x * 5.0 + 32.0),
+            "The secret number is 16 positive steps from the number S * 4",
+            Box::new(|x| x / 4.0 - 16.0), // Simplified formula: S = 4(N + 16)
         ),
         (
-            "The secret number is 6 positive steps from the number x + 2",
-            Box::new(|x| x - 6.0 - 2.0),
+            "The secret number is 32 negative steps from the number S / 5",
+            Box::new(|x| x * 5.0 + 32.0), // Simplified formula: S = (N - 32) / 5
         ),
         (
-            "The secret number is 8 negative steps from the number x - 3",
-            Box::new(|x| x + 8.0 + 3.0),
+            "The secret number is 6 positive steps from the number S + 2",
+            Box::new(|x| x - 6.0 - 2.0), // Simplified formula: S = N + 8
         ),
         (
-            "The secret number is 4 positive steps from the number x * 6",
-            Box::new(|x| x / 6.0 - 4.0),
+            "The secret number is 8 negative steps from the number S - 3",
+            Box::new(|x| x + 8.0 + 3.0), // Simplified formula: S = N - 11
         ),
         (
-            "The secret number is 10 negative steps from the number x / 7",
-            Box::new(|x| x * 7.0 + 10.0),
+            "The secret number is 4 positive steps from the number S * 6",
+            Box::new(|x| x / 6.0 - 4.0), // Simplified formula: S = 6(N + 4)
         ),
         (
-            "The secret number is 10 positive steps from the number x + 5",
-            Box::new(|x| x - 10.0 - 5.0),
+            "The secret number is 10 negative steps from the number S / 7",
+            Box::new(|x| x * 7.0 + 10.0), // Simplified formula: S = (N - 10) / 7
         ),
         (
-            "The secret number is 20 negative steps from the number x - 3",
-            Box::new(|x| x + 20.0 + 3.0),
+            "The secret number is 10 positive steps from the number S + 5",
+            Box::new(|x| x - 10.0 - 5.0), // Simplified formula: S = N + 15
         ),
         (
-            "The secret number is 15 positive steps from the number x * 2",
-            Box::new(|x| x / 2.0 - 15.0),
+            "The secret number is 20 negative steps from the number S - 3",
+            Box::new(|x| x + 20.0 + 3.0), // Simplified formula: S = N - 23
         ),
         (
-            "The secret number is 30 negative steps from the number x / 3",
-            Box::new(|x| x * 3.0 + 30.0),
+            "The secret number is 15 positive steps from the number S * 2",
+            Box::new(|x| x / 2.0 - 15.0), // Simplified formula: S = 2(N + 15)
         ),
         (
-            "The secret number is 12 positive steps from the number x + 4",
-            Box::new(|x| x - 12.0 - 4.0),
+            "The secret number is 30 negative steps from the number S / 3",
+            Box::new(|x| x * 3.0 + 30.0), // Simplified formula: S = (N - 30) / 3
         ),
         (
-            "The secret number is 18 negative steps from the number x - 6",
-            Box::new(|x| x + 18.0 + 6.0),
+            "The secret number is 12 positive steps from the number S + 4",
+            Box::new(|x| x - 12.0 - 4.0), // Simplified formula: S = N + 16
         ),
         (
-            "The secret number is 22 positive steps from the number x * 5",
-            Box::new(|x| x / 5.0 - 22.0),
+            "The secret number is 18 negative steps from the number S - 6",
+            Box::new(|x| x + 18.0 + 6.0), // Simplified formula: S = N - 24
         ),
         (
-            "The secret number is 28 negative steps from the number x / 4",
-            Box::new(|x| x * 4.0 + 28.0),
+            "The secret number is 22 positive steps from the number S * 5",
+            Box::new(|x| x / 5.0 - 22.0), // Simplified formula: S = 5(N + 22)
         ),
         (
-            "The secret number is 14 positive steps from the number x + 7",
-            Box::new(|x| x - 14.0 - 7.0),
+            "The secret number is 28 negative steps from the number S / 4",
+            Box::new(|x| x * 4.0 + 28.0), // Simplified formula: S = (N - 28) / 4
         ),
         (
-            "The secret number is 16 negative steps from the number x - 8",
-            Box::new(|x| x + 16.0 + 8.0),
+            "The secret number is 14 positive steps from the number S + 7",
+            Box::new(|x| x - 14.0 - 7.0), // Simplified formula: S = N + 21
+        ),
+        (
+            "The secret number is 16 negative steps from the number S - 8",
+            Box::new(|x| x + 16.0 + 8.0), // Simplified formula: S = N - 24
         )
     ];
     
-    let (hint, expr) = expressions.choose(&mut rand::rng()).unwrap();
+    // Randomly select and display one hint
+    let mut rng = rand::rng();
+    let (hint, expr) = expressions.choose(&mut rng).unwrap();
     println!("{}: {} = {:.2}", "Easy Hint".blue(), hint, expr(secret_number));
 }
 
-/// Provides a hard mathematical hint for advanced players
-/// 
-/// Hints use complex equations requiring algebraic solving
+/// Provides complex mathematical hints
+/// Parameters:
+///   secret_number: f64 - the target number to hint toward
 fn hard_hint_chooser(secret_number: f64) {
-    // Each tuple: (hint string, closure to compute value)
+      // Each tuple: (hint string, closure to compute value)
     /*
      * Define a vector of tuples containing hard hint strings and their corresponding calculations
      * Each tuple contains:
      * - A complex mathematical expression as a hint string
      * - A closure that computes the hint value based on the secret number
      */
+    // Collection of complex equation hints
     let expressions: Vec<(&str, Box<dyn Fn(f64) -> f64>)> = vec![
         (
-            "(x^2 - 3)×4 + (x^3÷2 - 7) = {}",
-            Box::new(|x| (x.powi(2) - 3.0) * 4.0 + (x.powi(3) / 2.0 - 7.0)),
+            "(S^2 - 3)×4 + (S^3÷2 - 7) = {}",
+            Box::new(|x| (x.powi(2) - 3.0) * 4.0 + (x.powi(3) / 2.0 - 7.0)), // Simplified formula: N = 4(S² - 3) + (S³ / 2) - 7
         ),
         (
-            "(2x^3 + 5)×3 - (x^2÷4 + 8) = {}",
-            Box::new(|x| (2.0 * x.powi(3) + 5.0) * 3.0 - (x.powi(2) / 4.0 + 8.0)),
+            "(2S^3 + 5)×3 - (S^2÷4 + 8) = {}",
+            Box::new(|x| (2.0 * x.powi(3) + 5.0) * 3.0 - (x.powi(2) / 4.0 + 8.0)), // Simplified formula: N = 3(2S³ + 5) - (S² / 4 + 8)
         ),
         (
-            "(x^4 - 2x)×2 + (3x÷5 - 12) = {}",
-            Box::new(|x| (x.powi(4) - 2.0 * x) * 2.0 + ((3.0 * x) / 5.0 - 12.0)),
+            "(S^4 - 2S)×2 + (3S÷5 - 12) = {}",
+            Box::new(|x| (x.powi(4) - 2.0 * x) * 2.0 + ((3.0 * x) / 5.0 - 12.0)), // Simplified formula: N = 2(S⁴ - 2S) + (3S / 5 - 12)
         ),
         (
-            "(5x^2 + 1)×6 - (x^3÷3 + 9) = {}",
-            Box::new(|x| (5.0 * x.powi(2) + 1.0) * 6.0 - (x.powi(3) / 3.0 + 9.0)),
+            "(5S^2 + 1)×6 - (S^3÷3 + 9) = {}",
+            Box::new(|x| (5.0 * x.powi(2) + 1.0) * 6.0 - (x.powi(3) / 3.0 + 9.0)), // Simplified formula: N = 6(5S² + 1) - (S³ / 3 + 9)
         ),
         (
-            "(x^3 - 4x^2)×5 + (2x÷7 - 11) = {}",
-            Box::new(|x| (x.powi(3) - 4.0 * x.powi(2)) * 5.0 + ((2.0 * x) / 7.0 - 11.0)),
+            "(S^3 - 4S^2)×5 + (2S÷7 - 11) = {}",
+            Box::new(|x| (x.powi(3) - 4.0 * x.powi(2)) * 5.0 + ((2.0 * x) / 7.0 - 11.0)), // Simplified formula: N = 5(S³ - 4S²) + (2S / 7 - 11)
         ),
         (
-            "(3x^2 + 2x)×2 - (x^4÷6 + 10) = {}",
-            Box::new(|x| (3.0 * x.powi(2) + 2.0 * x) * 2.0 - (x.powi(4) / 6.0 + 10.0)),
+            "(3S^2 + 2S)×2 - (S^4÷6 + 10) = {}",
+            Box::new(|x| (3.0 * x.powi(2) + 2.0 * x) * 2.0 - (x.powi(4) / 6.0 + 10.0)), // Simplified formula: N = 2(3S² + 2S) - (S⁴ / 6 + 10)
         ),
         (
-            "(x^5 - x^2)×4 + (5x÷3 - 13) = {}",
-            Box::new(|x| (x.powi(5) - x.powi(2)) * 4.0 + ((5.0 * x) / 3.0 - 13.0)),
+            "(S^5 - S^2)×4 + (5S÷3 - 13) = {}",
+            Box::new(|x| (x.powi(5) - x.powi(2)) * 4.0 + ((5.0 * x) / 3.0 - 13.0)), // Simplified formula: N = 4(S⁵ - S²) + (5S / 3 - 13)
         ),
         (
-            "(2x^3 + 7)×3 - (x^2÷2 + 6) = {}",
-            Box::new(|x| (2.0 * x.powi(3) + 7.0) * 3.0 - (x.powi(2) / 2.0 + 6.0)),
+            "(2S^3 + 7)×3 - (S^2÷2 + 6) = {}",
+            Box::new(|x| (2.0 * x.powi(3) + 7.0) * 3.0 - (x.powi(2) / 2.0 + 6.0)), // Simplified formula: N = 3(2S³ + 7) - (S² / 2 + 6)
         ),
         (
-            "(x^4 - 5x)×2 + (4x÷5 - 8) = {}",
-            Box::new(|x| (x.powi(4) - 5.0 * x) * 2.0 + ((4.0 * x) / 5.0 - 8.0)),
+            "(S^4 - 5S)×2 + (4S÷5 - 8) = {}",
+            Box::new(|x| (x.powi(4) - 5.0 * x) * 2.0 + ((4.0 * x) / 5.0 - 8.0)), // Simplified formula: N = 2(S⁴ - 5S) + (4S / 5 - 8)
         ),
         (
-            "(4x^2 + 3x)×5 - (x^3÷4 + 7) = {}",
-            Box::new(|x| (4.0 * x.powi(2) + 3.0 * x) * 5.0 - (x.powi(3) / 4.0 + 7.0)),
+            "(4S^2 + 3S)×5 - (S^3÷4 + 7) = {}",
+            Box::new(|x| (4.0 * x.powi(2) + 3.0 * x) * 5.0 - (x.powi(3) / 4.0 + 7.0)), // Simplified formula: N = 5(4S² + 3S) - (S³ / 4 + 7)
         ),
         (
-            "(x^3 - 2x^2)×6 + (3x÷2 - 9) = {}",
-            Box::new(|x| (x.powi(3) - 2.0 * x.powi(2)) * 6.0 + ((3.0 * x) / 2.0 - 9.0)),
+            "(S^3 - 2S^2)×6 + (3S÷2 - 9) = {}",
+            Box::new(|x| (x.powi(3) - 2.0 * x.powi(2)) * 6.0 + ((3.0 * x) / 2.0 - 9.0)), // Simplified formula: N = 6(S³ - 2S²) + (3S / 2 - 9)
         ),
         (
-            "(2x^4 + x)×2 - (x^2÷3 + 12) = {}",
-            Box::new(|x| (2.0 * x.powi(4) + x) * 2.0 - (x.powi(2) / 3.0 + 12.0)),
+            "(2S^4 + S)×2 - (S^2÷3 + 12) = {}",
+            Box::new(|x| (2.0 * x.powi(4) + x) * 2.0 - (x.powi(2) / 3.0 + 12.0)), // Simplified formula: N = 2(2S⁴ + S) - (S² / 3 + 12)
         ),
         (
-            "(x^2 + 6x)×3 + (2x^3÷5 - 14) = {}",
-            Box::new(|x| (x.powi(2) + 6.0 * x) * 3.0 + ((2.0 * x.powi(3)) / 5.0 - 14.0)),
+            "(S^2 + 6S)×3 + (2S^3÷5 - 14) = {}",
+            Box::new(|x| (x.powi(2) + 6.0 * x) * 3.0 + ((2.0 * x.powi(3)) / 5.0 - 14.0)), // Simplified formula: N = 3(S² + 6S) + (2S³ / 5 - 14)
         ),
         (
-            "(5x^3 - x)×4 - (x^2÷6 + 11) = {}",
-            Box::new(|x| (5.0 * x.powi(3) - x) * 4.0 - (x.powi(2) / 6.0 + 11.0)),
+            "(5S^3 - S)×4 - (S^2÷6 + 11) = {}",
+            Box::new(|x| (5.0 * x.powi(3) - x) * 4.0 - (x.powi(2) / 6.0 + 11.0)), // Simplified formula: N = 4(5S³ - S) - (S² / 6 + 11)
         ),
         (
-            "(x^4 + 2x^2)×2 + (3x÷7 - 10) = {}",
-            Box::new(|x| (x.powi(4) + 2.0 * x.powi(2)) * 2.0 + ((3.0 * x) / 7.0 - 10.0)),
+            "(S^4 + 2S^2)×2 + (3S÷7 - 10) = {}",
+            Box::new(|x| (x.powi(4) + 2.0 * x.powi(2)) * 2.0 + ((3.0 * x) / 7.0 - 10.0)), // Simplified formula: N = 2(S⁴ + 2S²) + (3S / 7 - 10)
         ),
         (
-            "(3x^2 - 4x)×5 - (x^3÷2 + 13) = {}",
-            Box::new(|x| (3.0 * x.powi(2) - 4.0 * x) * 5.0 - (x.powi(3) / 2.0 + 13.0)),
+            "(3S^2 - 4S)×5 - (S^3÷2 + 13) = {}",
+            Box::new(|x| (3.0 * x.powi(2) - 4.0 * x) * 5.0 - (x.powi(3) / 2.0 + 13.0)), // Simplified formula: N = 5(3S² - 4S) - (S³ / 2 + 13)
         ),
         (
-            "(x^5 + x^2)×3 + (4x÷4 - 15) = {}",
-            Box::new(|x| (x.powi(5) + x.powi(2)) * 3.0 + ((4.0 * x) / 4.0 - 15.0)),
+            "(S^5 + S^2)×3 + (4S÷4 - 15) = {}",
+            Box::new(|x| (x.powi(5) + x.powi(2)) * 3.0 + ((4.0 * x) / 4.0 - 15.0)), // Simplified formula: N = 3(S⁵ + S²) + (S - 15)
         ),
         (
-            "(2x^3 - 3x)×2 - (x^2÷5 + 8) = {}",
-            Box::new(|x| (2.0 * x.powi(3) - 3.0 * x) * 2.0 - (x.powi(2) / 5.0 + 8.0)),
+            "(2S^3 - 3S)×2 - (S^2÷5 + 8) = {}",
+            Box::new(|x| (2.0 * x.powi(3) - 3.0 * x) * 2.0 - (x.powi(2) / 5.0 + 8.0)), // Simplified formula: N = 2(2S³ - 3S) - (S² / 5 + 8)
         ),
         (
-            "(x^4 + 5x)×4 + (2x^3÷3 - 7) = {}",
-            Box::new(|x| (x.powi(4) + 5.0 * x) * 4.0 + ((2.0 * x.powi(3)) / 3.0 - 7.0)),
+            "(S^4 + 5S)×4 + (2S^3÷3 - 7) = {}",
+            Box::new(|x| (x.powi(4) + 5.0 * x) * 4.0 + ((2.0 * x.powi(3)) / 3.0 - 7.0)), // Simplified formula: N = 4(S⁴ + 5S) + (2S³ / 3 - 7)
         ),
         (
-            "(4x^2 - x)×6 - (x^4÷2 + 9) = {}",
-            Box::new(|x| (4.0 * x.powi(2) - x) * 6.0 - (x.powi(4) / 2.0 + 9.0)),
+            "(4S^2 - S)×6 - (S^4÷2 + 9) = {}",
+            Box::new(|x| (4.0 * x.powi(2) - x) * 6.0 - (x.powi(4) / 2.0 + 9.0)), // Simplified formula: N = 6(4S² - S) - (S⁴ / 2 + 9)
         ),
         (
-            "3(x^2 - 4) + 2x - (x^3÷5) = {}",
-            Box::new(|x| 3.0 * (x.powi(2) - 4.0) + 2.0 * x - x.powi(3) / 5.0),
+            "3(S^2 - 4) + 2S - (S^3÷5) = {}",
+            Box::new(|x| 3.0 * (x.powi(2) - 4.0) + 2.0 * x - x.powi(3) / 5.0), // Simplified formula: N = 3(S² - 4) + 2S - S³ / 5
         ),
         (
-            "(2x^3 + 7x - 1)×2 - (x^2 - 3) = {}",
-            Box::new(|x| (2.0 * x.powi(3) + 7.0 * x - 1.0) * 2.0 - (x.powi(2) - 3.0)),
+            "(2S^3 + 7S - 1)×2 - (S^2 - 3) = {}",
+            Box::new(|x| (2.0 * x.powi(3) + 7.0 * x - 1.0) * 2.0 - (x.powi(2) - 3.0)), // Simplified formula: N = 2(2S³ + 7S - 1) - (S² - 3)
         ),
         (
-            "(4x^4 - 2x^2)÷3 + 5x - 8 = {}",
-            Box::new(|x| (4.0 * x.powi(4) - 2.0 * x.powi(2)) / 3.0 + 5.0 * x - 8.0),
+            "(4S^4 - 2S^2)÷3 + 5S - 8 = {}",
+            Box::new(|x| (4.0 * x.powi(4) - 2.0 * x.powi(2)) / 3.0 + 5.0 * x - 8.0), // Simplified formula: N = (4S⁴ - 2S²) / 3 + 5S - 8
         ),
-        ("(x^2 + 2x)(x - 1) + 6 = {}", Box::new(|x| (x.powi(2) + 2.0 * x) * (x - 1.0) + 6.0)),
+        ("(S^2 + 2S)(S - 1) + 6 = {}", Box::new(|x| (x.powi(2) + 2.0 * x) * (x - 1.0) + 6.0)), // Simplified formula: N = (S² + 2S)(S - 1) + 6
         (
-            "7x^3 - 2(x^2 - 5x) + (x÷2) = {}",
-            Box::new(|x| 7.0 * x.powi(3) - 2.0 * (x.powi(2) - 5.0 * x) + x / 2.0),
+            "7S^3 - 2(S^2 - 5S) + (S÷2) = {}",
+            Box::new(|x| 7.0 * x.powi(3) - 2.0 * (x.powi(2) - 5.0 * x) + x / 2.0), // Simplified formula: N = 7S³ - 2(S² - 5S) + S/2
         ),
         (
-            "(x^4 - 3x^2 + 2)÷2 + 4x = {}",
-            Box::new(|x| (x.powi(4) - 3.0 * x.powi(2) + 2.0) / 2.0 + 4.0 * x),
+            "(S^4 - 3S^2 + 2)÷2 + 4S = {}",
+            Box::new(|x| (x.powi(4) - 3.0 * x.powi(2) + 2.0) / 2.0 + 4.0 * x), // Simplified formula: N = (S⁴ - 3S² + 2) / 2 + 4S
         ),
         (
-            "5(x^2 - x) - (2x^3 + 3) = {}",
-            Box::new(|x| 5.0 * (x.powi(2) - x) - (2.0 * x.powi(3) + 3.0)),
+            "5(S^2 - S) - (2S^3 + 3) = {}",
+            Box::new(|x| 5.0 * (x.powi(2) - x) - (2.0 * x.powi(3) + 3.0)), // Simplified formula: N = 5(S² - S) - (2S³ + 3)
         ),
         (
-            "(x^3 + 4x^2)(x - 2) + 9 = {}",
-            Box::new(|x| (x.powi(3) + 4.0 * x.powi(2)) * (x - 2.0) + 9.0),
+            "(S^3 + 4S^2)(S - 2) + 9 = {}",
+            Box::new(|x| (x.powi(3) + 4.0 * x.powi(2)) * (x - 2.0) + 9.0), // Simplified formula: N = (S³ + 4S²)(S - 2) + 9
         ),
         (
-            "(3x^2 - 2x + 1)÷(x + 1) - 7 = {}",
-            Box::new(|x| (3.0 * x.powi(2) - 2.0 * x + 1.0) / (x + 1.0) - 7.0),
+            "(3S^2 - 2S + 1)÷(S + 1) - 7 = {}",
+            Box::new(|x| (3.0 * x.powi(2) - 2.0 * x + 1.0) / (x + 1.0) - 7.0), // Simplified formula: N = (3S² - 2S + 1) / (S + 1) - 7
         ),
         (
-            "(2x^4 - x^2) + (3x - 5)^2 = {}",
-            Box::new(|x| 2.0 * x.powi(4) - x.powi(2) + (3.0 * x - 5.0).powi(2)),
+            "(2S^4 - S^2) + (3S - 5)^2 = {}",
+            Box::new(|x| 2.0 * x.powi(4) - x.powi(2) + (3.0 * x - 5.0).powi(2)), // Simplified formula: N = (2S⁴ - S²) + (3S - 5)²
         ),
         (
-            "6x^2 - 4x + (x^3 - 2x^2) = {}",
-            Box::new(|x| 6.0 * x.powi(2) - 4.0 * x + (x.powi(3) - 2.0 * x.powi(2))),
+            "6S^2 - 4S + (S^3 - 2S^2) = {}",
+            Box::new(|x| 6.0 * x.powi(2) - 4.0 * x + (x.powi(3) - 2.0 * x.powi(2))), // Simplified formula: N = 6S² - 4S + (S³ - 2S²)
         ),
         (
-            "(x^2 + 5x + 6)÷(x + 2) + 3x = {}",
-            Box::new(|x| (x.powi(2) + 5.0 * x + 6.0) / (x + 2.0) + 3.0 * x),
+            "(S^2 + 5S + 6)÷(S + 2) + 3S = {}",
+            Box::new(|x| (x.powi(2) + 5.0 * x + 6.0) / (x + 2.0) + 3.0 * x), // Simplified formula: N = (S² + 5S + 6) / (S + 2) + 3S
         ),
         (
-            "2(x^3 - x^2) - (x^2 + 4x) + 10 = {}",
-            Box::new(|x| 2.0 * (x.powi(3) - x.powi(2)) - (x.powi(2) + 4.0 * x) + 10.0),
+            "2(S^3 - S^2) - (S^2 + 4S) + 10 = {}",
+            Box::new(|x| 2.0 * (x.powi(3) - x.powi(2)) - (x.powi(2) + 4.0 * x) + 10.0), // Simplified formula: N = 2(S³ - S²) - (S² + 4S) + 10
         ),
         (
-            "(x^4 - 2x^2 + x)×3 - 8 = {}",
-            Box::new(|x| (x.powi(4) - 2.0 * x.powi(2) + x) * 3.0 - 8.0),
+            "(S^4 - 2S^2 + S)×3 - 8 = {}",
+            Box::new(|x| (x.powi(4) - 2.0 * x.powi(2) + x) * 3.0 - 8.0), // Simplified formula: N = 3(S⁴ - 2S² + S) - 8
         ),
-        ("(x^2 - 3x + 2)^2 + x = {}", Box::new(|x| (x.powi(2) - 3.0 * x + 2.0).powi(2) + x)),
+        ("(S^2 - 3S + 2)^2 + S = {}", Box::new(|x| (x.powi(2) - 3.0 * x + 2.0).powi(2) + x)), // Simplified formula: N = (S² - 3S + 2)² + S
         (
-            "4x^3 - (x^2 + 2x - 1) + (x^4÷2) = {}",
-            Box::new(|x| 4.0 * x.powi(3) - (x.powi(2) + 2.0 * x - 1.0) + x.powi(4) / 2.0),
+            "4S^3 - (S^2 + 2S - 1) + (S^4÷2) = {}",
+            Box::new(|x| 4.0 * x.powi(3) - (x.powi(2) + 2.0 * x - 1.0) + x.powi(4) / 2.0), // Simplified formula: N = 4S³ - (S² + 2S - 1) + S⁴ / 2
         ),
-        ("(2x^2 - x + 5)(x - 3) = {}", Box::new(|x| (2.0 * x.powi(2) - x + 5.0) * (x - 3.0))),
+        ("(2S^2 - S + 5)(S - 3) = {}", Box::new(|x| (2.0 * x.powi(2) - x + 5.0) * (x - 3.0))), // Simplified formula: N = (2S² - S + 5)(S - 3)
         (
-            "(x^3 + 2x^2 - x)÷2 + 7 = {}",
-            Box::new(|x| (x.powi(3) + 2.0 * x.powi(2) - x) / 2.0 + 7.0),
+            "(S^3 + 2S^2 - S)÷2 + 7 = {}",
+            Box::new(|x| (x.powi(3) + 2.0 * x.powi(2) - x) / 2.0 + 7.0), // Simplified formula: N = (S³ + 2S² - S) / 2 + 7
         ),
         (
-            "(x^2 - 4x + 4) + (3x^3 - x) = {}",
-            Box::new(|x| x.powi(2) - 4.0 * x + 4.0 + (3.0 * x.powi(3) - x)),
+            "(S^2 - 4S + 4) + (3S^3 - S) = {}",
+            Box::new(|x| x.powi(2) - 4.0 * x + 4.0 + (3.0 * x.powi(3) - x)), // Simplified formula: N = (S² - 4S + 4) + (3S³ - S)
         ),
         (
-            "(x^4 - x^2) - 2(x^3 + x) + 6 = {}",
-            Box::new(|x| x.powi(4) - x.powi(2) - 2.0 * (x.powi(3) + x) + 6.0),
+            "(S^4 - S^2) - 2(S^3 + S) + 6 = {}",
+            Box::new(|x| x.powi(4) - x.powi(2) - 2.0 * (x.powi(3) + 2.0 * x) + 6.0), // Simplified formula: N = (S⁴ - S²) - 2(S³ + 2S) + 6
         ),
         (
-            "2(x^3 - 2x^2 + 5) + 3x - 7 = {}",
-            Box::new(|x| 2.0 * (x.powi(3) - 2.0 * x.powi(2) + 5.0) + 3.0 * x - 7.0),
+            "2(S^3 - 2S^2 + 5) + 3S - 7 = {}",
+            Box::new(|x| 2.0 * (x.powi(3) - 2.0 * x.powi(2) + 5.0) + 3.0 * x - 7.0), // Simplified formula: N = 2(S³ - 2S² + 5) + 3S - 7
         ),
         (
-            "(x^2 + 4x + 4) - (2x^3 - x) = {}",
-            Box::new(|x| x.powi(2) + 4.0 * x + 4.0 - (2.0 * x.powi(3) - x)),
+            "(S^3 - 4S^2 + 2)×4 - (S^2 - 1) = {}",
+            Box::new(|x| (x.powi(3) - 4.0 * x.powi(2) + 2.0) * 4.0 - (x.powi(2) - 1.0)), // Simplified formula: N = 4(S³ - 4S² + 2) - (S² - 1)
         ),
         (
-            "(5x^4 - 3x^2)÷2 + x - 9 = {}",
-            Box::new(|x| (5.0 * x.powi(4) - 3.0 * x.powi(2)) / 2.0 + x - 9.0),
+            "(3S^4 - 2S^2)÷4 + 2S - 5 = {}",
+            Box::new(|x| (3.0 * x.powi(4) - 2.0 * x.powi(2)) / 4.0 + 2.0 * x - 5.0), // Simplified formula: N = (3S⁴ - 2S²) / 4 + 2S - 5
         ),
         (
-            "(3x^2 - x + 1)(x - 2) + 8 = {}",
-            Box::new(|x| (3.0 * x.powi(2) - x + 1.0) * (x - 2.0) + 8.0),
+            "(2S^2 - S + 3)(S + 2) + 7 = {}",
+            Box::new(|x| (2.0 * x.powi(2) - x + 3.0) * (x + 2.0) + 7.0), // Simplified formula: N = (2S² - S + 3)(S + 2) + 7
         ),
+        ("5S^3 - (S^2 + 2S) + 4 = {}", Box::new(|x| 5.0 * x.powi(3) - (x.powi(2) + 2.0 * x) + 4.0)), // Simplified formula: N = 5S³ - (S² + 2S) + 4
         (
-            "4x^3 - 2(x^2 + 3x) + 5 = {}",
-            Box::new(|x| 4.0 * x.powi(3) - 2.0 * (x.powi(2) + 3.0 * x) + 5.0),
+            "(S^4 + 3S^2 - 2)÷2 + 5S = {}",
+            Box::new(|x| (x.powi(4) + 3.0 * x.powi(2) - 2.0) / 2.0 + 5.0 * x), // Simplified formula: N = (S⁴ + 3S² - 2) / 2 + 5S
         ),
         (
-            "(x^4 + 2x^2 - 3)÷3 + 6x = {}",
-            Box::new(|x| (x.powi(4) + 2.0 * x.powi(2) - 3.0) / 3.0 + 6.0 * x),
+            "8(S^2 - S) - (2S^3 + 6) = {}",
+            Box::new(|x| 8.0 * (x.powi(2) - x) - (2.0 * x.powi(3) + 6.0)), // Simplified formula: N = 8(S² - S) - (2S³ + 6)
         ),
         (
-            "7(x^2 - 2x) - (x^3 + 4) = {}",
-            Box::new(|x| 7.0 * (x.powi(2) - 2.0 * x) - (x.powi(3) + 4.0)),
+            "(3S^3 + 2S^2)(S - 1) - 11 = {}",
+            Box::new(|x| (3.0 * x.powi(3) + 2.0 * x.powi(2)) * (x - 1.0) - 11.0), // Simplified formula: N = (3S³ + 2S²)(S - 1) - 11
         ),
         (
-            "(2x^3 + 5x^2)(x + 1) - 10 = {}",
-            Box::new(|x| (2.0 * x.powi(3) + 5.0 * x.powi(2)) * (x + 1.0) - 10.0),
+            "(2S^2 - 3S + 1)÷(S + 3) + 6 = {}",
+            Box::new(|x| (2.0 * x.powi(2) - 3.0 * x + 1.0) / (x + 3.0) + 6.0), // Simplified formula: N = (2S² - 3S + 1) / (S + 3) + 6
         ),
         (
-            "(4x^2 - x + 2)÷(x + 2) + 3 = {}",
-            Box::new(|x| (4.0 * x.powi(2) - x + 2.0) / (x + 2.0) + 3.0),
+            "(S^4 - 3S^2) + (S - 4)^2 = {}",
+            Box::new(|x: f64| x.powi(4) - 3.0 * x.powi(2) + (x - 4.0).powi(2)), // Simplified formula: N = (S⁴ - 3S²) + (S - 4)²
         ),
         (
-            "(x^4 - 2x^2) + (2x - 3)^2 = {}",
-            Box::new(|x| x.powi(4) - 2.0 * x.powi(2) + (2.0 * x - 3.0).powi(2)),
+            "(S² - 3)×4 + (S³÷2 - 7) = {}",
+            Box::new(|x| (x.powi(2) - 3.0) * 4.0 + (x.powi(3) / 2.0 - 7.0)), // Simplified formula: N = 4(S² - 3) + (S³ / 2) - 7
         ),
         (
-            "5x^2 - 3x + (2x^3 - x^2) = {}",
-            Box::new(|x| 5.0 * x.powi(2) - 3.0 * x + (2.0 * x.powi(3) - x.powi(2))),
+            "(2S³ + 5)×3 - (S²÷4 + 8) = {}",
+            Box::new(|x| (2.0 * x.powi(3) + 5.0) * 3.0 - (x.powi(2) / 4.0 + 8.0)), // Simplified formula: N = 3(2S³ + 5) - (S² / 4 + 8)
         ),
         (
-            "(x^2 + 3x + 2)÷(x + 1) + 4x = {}",
-            Box::new(|x| (x.powi(2) + 3.0 * x + 2.0) / (x + 1.0) + 4.0 * x),
+            "(5S² + 1)×6 - (S³÷3 + 9) = {}",
+            Box::new(|x| (5.0 * x.powi(2) + 1.0) * 6.0 - (x.powi(3) / 3.0 + 9.0)), // Simplified formula: N = 6(5S² + 1) - (S³ / 3 + 9)
         ),
         (
-            "3(x^3 - 2x^2) - (x^2 + 5x) + 12 = {}",
-            Box::new(|x| 3.0 * (x.powi(3) - 2.0 * x.powi(2)) - (x.powi(2) + 5.0 * x) + 12.0),
+            "(3S² + 2S)×2 - (S⁴÷6 + 10) = {}",
+            Box::new(|x| (3.0 * x.powi(2) + 2.0 * x) * 2.0 - (x.powi(4) / 6.0 + 10.0)), // Simplified formula: N = 2(3S² + 2S) - (S⁴ / 6 + 10)
         ),
         (
-            "(x^4 - x^2 + 2x)×2 - 7 = {}",
-            Box::new(|x| (x.powi(4) - x.powi(2) + 2.0 * x) * 2.0 - 7.0),
+            "(S³ - 2S²)×6 + (3S÷2 - 9) = {}",
+            Box::new(|x| (x.powi(3) - 2.0 * x.powi(2)) * 6.0 + ((3.0 * x) / 2.0 - 9.0)), // Simplified formula: N = 6(S³ - 2S²) + (3S / 2 - 9)
         ),
-        ("(x^2 - 4x + 3)^2 + 2x = {}", Box::new(|x| (x.powi(2) - 4.0 * x + 3.0).powi(2) + 2.0 * x)),
         (
-            "6x^3 - (2x^2 + x - 2) + (x^4÷3) = {}",
-            Box::new(|x| 6.0 * x.powi(3) - (2.0 * x.powi(2) + x - 2.0) + x.powi(4) / 3.0),
+            "3(S² - 4) + 2S - (S³÷5) = {}",
+            Box::new(|x| 3.0 * (x.powi(2) - 4.0) + 2.0 * x - x.powi(3) / 5.0), // Simplified formula: N = 3(S² - 4) + 2S - S³ / 5
         ),
+        (" (S² + 2S)(S - 1) + 6 = {}", Box::new(|x| (x.powi(2) + 2.0 * x) * (x - 1.0) + 6.0)), // Simplified formula: N = (S² + 2S)(S - 1) + 6
         (
-            "(3x^2 - 2x + 4)(x - 1) = {}",
-            Box::new(|x| (3.0 * x.powi(2) - 2.0 * x + 4.0) * (x - 1.0)),
-        ),
-        (
-            "(x^3 + x^2 - 2x)÷3 + 9 = {}",
-            Box::new(|x| (x.powi(3) + x.powi(2) - 2.0 * x) / 3.0 + 9.0),
-        ),
-        (
-            "(x^2 - 3x + 9) + (4x^3 - 2x) = {}",
-            Box::new(|x| x.powi(2) - 3.0 * x + 9.0 + (4.0 * x.powi(3) - 2.0 * x)),
-        ),
-        (
-            "(x^4 - 2x^2) - 3(x^3 + 2x) + 8 = {}",
-            Box::new(|x| x.powi(4) - 2.0 * x.powi(2) - 3.0 * (x.powi(3) + 2.0 * x) + 8.0),
-        ),
-        (
-            "2(x^2 + 5x - 1) + x^3 - 6 = {}",
-            Box::new(|x| 2.0 * (x.powi(2) + 5.0 * x - 1.0) + x.powi(3) - 6.0),
-        ),
-        (
-            "(x^3 - 4x^2 + 2)×4 - (x^2 - 1) = {}",
-            Box::new(|x| (x.powi(3) - 4.0 * x.powi(2) + 2.0) * 4.0 - (x.powi(2) - 1.0)),
-        ),
-        (
-            "(3x^4 - 2x^2)÷4 + 2x - 5 = {}",
-            Box::new(|x| (3.0 * x.powi(4) - 2.0 * x.powi(2)) / 4.0 + 2.0 * x - 5.0),
-        ),
-        (
-            "(2x^2 - x + 3)(x + 2) + 7 = {}",
-            Box::new(|x| (2.0 * x.powi(2) - x + 3.0) * (x + 2.0) + 7.0),
-        ),
-        ("5x^3 - (x^2 + 2x) + 4 = {}", Box::new(|x| 5.0 * x.powi(3) - (x.powi(2) + 2.0 * x) + 4.0)),
-        (
-            "(x^4 + 3x^2 - 2)÷2 + 5x = {}",
-            Box::new(|x| (x.powi(4) + 3.0 * x.powi(2) - 2.0) / 2.0 + 5.0 * x),
-        ),
-        (
-            "8(x^2 - x) - (2x^3 + 6) = {}",
-            Box::new(|x| 8.0 * (x.powi(2) - x) - (2.0 * x.powi(3) + 6.0)),
-        ),
-        (
-            "(3x^3 + 2x^2)(x - 1) - 11 = {}",
-            Box::new(|x| (3.0 * x.powi(3) + 2.0 * x.powi(2)) * (x - 1.0) - 11.0),
-        ),
-        (
-            "(2x^2 - 3x + 1)÷(x + 3) + 6 = {}",
-            Box::new(|x| (2.0 * x.powi(2) - 3.0 * x + 1.0) / (x + 3.0) + 6.0),
-        ),
-        (
-            "(x^4 - 3x^2) + (x - 4)^2 = {}",
-            Box::new(|x: f64| x.powi(4) - 3.0 * x.powi(2) + (x - 4.0).powi(2)),
-        ),
-        (
-            "(x² - 3)×4 + (x³÷2 - 7) = {}",
-            Box::new(|x| (x.powi(2) - 3.0) * 4.0 + (x.powi(3) / 2.0 - 7.0)),
-        ),
-        (
-            "(2x³ + 5)×3 - (x²÷4 + 8) = {}",
-            Box::new(|x| (2.0 * x.powi(3) + 5.0) * 3.0 - (x.powi(2) / 4.0 + 8.0)),
-        ),
-        (
-            "(5x² + 1)×6 - (x³÷3 + 9) = {}",
-            Box::new(|x| (5.0 * x.powi(2) + 1.0) * 6.0 - (x.powi(3) / 3.0 + 9.0)),
-        ),
-        (
-            "(3x² + 2x)×2 - (x⁴÷6 + 10) = {}",
-            Box::new(|x| (3.0 * x.powi(2) + 2.0 * x) * 2.0 - (x.powi(4) / 6.0 + 10.0)),
-        ),
-        (
-            "(x³ - 2x²)×6 + (3x÷2 - 9) = {}",
-            Box::new(|x| (x.powi(3) - 2.0 * x.powi(2)) * 6.0 + ((3.0 * x) / 2.0 - 9.0)),
-        ),
-        (
-            "3(x² - 4) + 2x - (x³÷5) = {}",
-            Box::new(|x| 3.0 * (x.powi(2) - 4.0) + 2.0 * x - x.powi(3) / 5.0),
-        ),
-        ("(x² + 2x)(x - 1) + 6 = {}", Box::new(|x| (x.powi(2) + 2.0 * x) * (x - 1.0) + 6.0)),
-        (
-            "7x³ - 2(x² - 5x) + (x÷2) = {}",
-            Box::new(|x| 7.0 * x.powi(3) - 2.0 * (x.powi(2) - 5.0 * x) + x / 2.0),
+            "7S³ - 2(S² - 5S) + (S÷2) = {}",
+            Box::new(|x| 7.0 * x.powi(3) - 2.0 * (x.powi(2) - 5.0 * x) + x / 2.0), // Simplified formula: N = 7S³ - 2(S² - 5S) + S/2
         ),
         // Basic linear
-        ("2x + 5 = {}", Box::new(|x| 2.0 * x + 5.0)),
-        ("3x - 7 = {}", Box::new(|x| 3.0 * x - 7.0)),
+        ("2S + 5 = {}", Box::new(|x| 2.0 * x + 5.0)), // Simplified formula: N = 2S + 5
+        ("3S - 7 = {}", Box::new(|x| 3.0 * x - 7.0)), // Simplified formula: N = 3S - 7
         // Quadratic
-        ("x² + 3x - 2 = {}", Box::new(|x| x.powi(2) + 3.0 * x - 2.0)),
-        ("2x² - 5x + 1 = {}", Box::new(|x| 2.0 * x.powi(2) - 5.0 * x + 1.0)),
+        ("S² + 3S - 2 = {}", Box::new(|x| x.powi(2) + 3.0 * x - 2.0)), // Simplified formula: N = S² + 3S - 2
+        ("2S² - 5S + 1 = {}", Box::new(|x| 2.0 * x.powi(2) - 5.0 * x + 1.0)), // Simplified formula: N = 2S² - 5S + 1
         // Cubic
-        ("x³ + 2x - 1 = {}", Box::new(|x| x.powi(3) + 2.0 * x - 1.0)),
-        ("2x³ - x² + 5 = {}", Box::new(|x| 2.0 * x.powi(3) - x.powi(2) + 5.0)),
+        ("S³ + 2S - 1 = {}", Box::new(|x| x.powi(3) + 2.0 * x - 1.0)), // Simplified formula: N = S³ + 2S - 1
+        ("2S³ - S² + 5 = {}", Box::new(|x| 2.0 * x.powi(3) - x.powi(2) + 5.0)), // Simplified formula: N = 2S³ - S² + 5
         // Mixed operations
-        ("x(x + 1) = {}", Box::new(|x| x * (x + 1.0))),
-        ("(x + 2)(x - 3) = {}", Box::new(|x| (x + 2.0) * (x - 3.0))),
-        ("2(x + 3) = {}", Box::new(|x| 2.0 * (x + 3.0))),
-        ("3(x² - 2x) = {}", Box::new(|x| 3.0 * (x.powi(2) - 2.0 * x))),
+        ("S(S + 1) = {}", Box::new(|x| x * (x + 1.0))), // Simplified formula: N = S(S + 1)
+        ("(S + 2)(S - 3) = {}", Box::new(|x| (x + 2.0) * (x - 3.0))), // Simplified formula: N = (S + 2)(S - 3)
+        ("2(S + 3) = {}", Box::new(|x| 2.0 * (x + 3.0))), // Simplified formula: N = 2(S + 3)
+        ("3(S² - 2S) = {}", Box::new(|x| 3.0 * (x.powi(2) - 2.0 * x))), // Simplified formula: N = 3(S² - 2S)
         // Simple fractions
-        ("x/2 + 3 = {}", Box::new(|x| x / 2.0 + 3.0)),
-        ("(x + 1)/3 = {}", Box::new(|x| (x + 1.0) / 3.0))
+        ("S/2 + 3 = {}", Box::new(|x| x / 2.0 + 3.0)), // Simplified formula: N = S/2 + 3
+        ("(S + 1)/3 = {}", Box::new(|x| (x + 1.0) / 3.0)) // Simplified formula: N = (S + 1) / 3
     ];
     
-    let (hint, expr) = expressions.choose(&mut rand::rng()).unwrap();
+    // Randomly select and display one hint
+    let mut rng = rand::rng();
+    let (hint, expr) = expressions.choose(&mut rng).unwrap();
     println!("{}: {} = {:.2}", "Hard Hint".purple(), hint, expr(secret_number));
 }
 
-/// Handles hint selection based on player's choice
-/// 
-/// # Arguments
-/// * `op` - Player's choice ("1", "2", or "3")
-/// * `secret_number` - The number to generate hints for
+/// Displays hint based on player's choice
+/// Parameters:
+///   op: &str - player's hint selection ("1", "2", or other)
+///   secret_number: f64 - number to generate hints for
 pub fn choose_hint(op: &str, secret_number: f64) {
     match op.trim() {
         "1" => {
@@ -547,30 +462,27 @@ pub fn choose_hint(op: &str, secret_number: f64) {
     }
 }
 
-/// Main game loop handling guessing logic
-/// 
-/// # Arguments
-/// * `op` - Hint choice
-/// * `secret` - The secret number
-/// * `attempts` - Current attempt count
-/// 
-/// # Returns
-/// Tuple of (guess_correct: bool, total_attempts: i32)
+/// Manages the core guessing loop
+/// Parameters:
+///   op: &str - hint choice
+///   secret: f64 - target number
+///   attempts: i32 - current attempt count
+/// Returns:
+///   Tuple of (success: bool, total_attempts: i32)
 pub fn game_loop(secret: f64, mut attempts: i32) -> (bool, i32) {
     loop {
         attempts += 1;
         println!("\nAttempt #{}", attempts);
         
-        // Get player's guess
+        // Get and validate player's guess
         print!("Enter your guess (1-100): ");
         let mut guess = String::new();
         io::stdin().read_line(&mut guess).expect("Failed to read input");
         
-        // Validate input
         let guess: f64 = match guess.trim().parse() {
             Ok(num) if (1.0..=100.0).contains(&num) => num,
             _ => {
-                println!("{}", "Invalid input. Please enter a number 1-100.".red());
+                println!("{}", "Invalid input. Please enter 1-100".red());
                 continue;
             }
         };
