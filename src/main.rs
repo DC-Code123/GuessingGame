@@ -49,6 +49,7 @@ fn main() {
                             continue 'game;
                         },
                         0 => { // Quit game
+                            println!("\nGame over in {} attempts. -quiting", attempts);
                             exit_game();
                         },
                         _ => { // Invalid input
@@ -77,7 +78,7 @@ fn get_hint_choice() -> String {
     println!("1. Easy hint (simple arithmetic)");
     println!("2. Hard hint (complex equations)");
     println!("3. No hints (I'm feeling lucky!)");
-    print!("Your choice (1-3, default 3): ");
+    println!("Your choice (1-3, default 3): ");
     
     let mut choice = String::new();
     io::stdin().read_line(&mut choice).expect("Failed to read input");

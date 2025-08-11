@@ -45,3 +45,12 @@ Guessing Game Expansion Ideas (Prioritized)
 
 15. Add sound effects for correct/incorrect guesses
     - Enhance the user experience by playing sounds when a guess is right or wrong.
+
+Note: they were 15 in general any missing will be finished and anyone who needs to review them will find them below:
+
+===========================================================
+FINISHED IDEAS:
+(They are in order meaning 1. was the first done and so on)
+===========================================================
+
+1.
