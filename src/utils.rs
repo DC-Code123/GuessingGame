@@ -110,7 +110,7 @@ fn easy_hint_chooser(secret_number: f64) {
             Box::new(|x| x / 60.0), // Simplified formula: N = S/60
         ),
         (
-            "You need the secret number pounds of flour to make {:.1} loaves of bread (2 lbs per loaf)",
+            "You need the secret number pounds of flour to make {:.1} loaves of bread (2 lbs per loaf) = {:.1}",
             Box::new(|x| x / 2.0), // Simplified formula: N = S/2
         ),
         (
@@ -202,7 +202,9 @@ fn easy_hint_chooser(secret_number: f64) {
     // Randomly select and display one hint
     let mut rng = rand::rng();
     let (hint, expr) = expressions.choose(&mut rng).unwrap();
-    println!("{}: {} = {:.2}", "Easy Hint".blue(), hint, expr(secret_number));
+    let calculated_value = expr(secret_number);
+    let formatted_hint = hint.replace("{:.1}", &format!("{:.1}", calculated_value));
+    println!("{}: {} = {:.2}", "Easy Hint".blue(), formatted_hint, calculated_value);
 }
 
 /// Provides complex mathematical hints
