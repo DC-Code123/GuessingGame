@@ -99,87 +99,103 @@ fn easy_hint_chooser(secret_number: f64) {
         ),
         (
             "The secret number is 16 negative steps from the number S + 4",
-            Box::new(|x| x + 16.0 - 4.0), // Simplified formula: S = N - 12
+            Box::new(|x| x + 16.0 - 4.0), // Simplified formula: N = S + 12
         ),
         (
-            "The secret number is 32 positive steps from the number S * 5",
-            Box::new(|x| x / 5.0 - 32.0), // Simplified formula: S = 5(N + 32)
+            "If you divide the secret number by 2 and add 5, you get {:.1}",
+            Box::new(|x| x / 2.0 + 5.0), // Simplified formula: N = S/2 + 5
         ),
         (
-            "The secret number is 6 negative steps from the number S / 6",
-            Box::new(|x| x * 6.0 + 6.0), // Simplified formula: S = (N - 6) / 6
+            "The secret number is how many minutes are in {:.1} hours",
+            Box::new(|x| x / 60.0), // Simplified formula: N = S/60
         ),
         (
-            "The secret number is 10 positive steps from the number S + 2",
-            Box::new(|x| x - 10.0 - 2.0), // Simplified formula: S = N + 12
+            "You need the secret number pounds of flour to make {:.1} loaves of bread (2 lbs per loaf)",
+            Box::new(|x| x / 2.0), // Simplified formula: N = S/2
         ),
         (
             "The secret number is 20 negative steps from the number S - 3",
-            Box::new(|x| x + 20.0 + 3.0), // Simplified formula: S = N - 23
+            Box::new(|x| x + 20.0 + 3.0), // Simplified formula: N = S - 23
         ),
         (
-            "The secret number is 16 positive steps from the number S * 4",
-            Box::new(|x| x / 4.0 - 16.0), // Simplified formula: S = 4(N + 16)
+            "A movie theater has {:.1} seats arranged in rows of the secret number seats each",
+            Box::new(|x| x / 8.0), // Simplified formula: N = S/8 (assuming 8 seats per row)
         ),
         (
-            "The secret number is 32 negative steps from the number S / 5",
-            Box::new(|x| x * 5.0 + 32.0), // Simplified formula: S = (N - 32) / 5
+            "The secret number is your grade if you got {:.1} points out of 100",
+            Box::new(|x| x), // Simplified formula: N = S
         ),
         (
-            "The secret number is 6 positive steps from the number S + 2",
-            Box::new(|x| x - 6.0 - 2.0), // Simplified formula: S = N + 8
+            "You walk the secret number blocks in {:.1} minutes at 2 blocks per minute",
+            Box::new(|x| x / 2.0), // Simplified formula: N = S/2
         ),
         (
             "The secret number is 8 negative steps from the number S - 3",
-            Box::new(|x| x + 8.0 + 3.0), // Simplified formula: S = N - 11
+            Box::new(|x| x + 8.0 + 3.0), // Simplified formula: N = S - 11
         ),
         (
-            "The secret number is 4 positive steps from the number S * 6",
-            Box::new(|x| x / 6.0 - 4.0), // Simplified formula: S = 6(N + 4)
+            "A book has {:.1} pages and you read the secret number pages per day to finish in 5 days",
+            Box::new(|x| x / 5.0), // Simplified formula: N = S/5
         ),
         (
-            "The secret number is 10 negative steps from the number S / 7",
-            Box::new(|x| x * 7.0 + 10.0), // Simplified formula: S = (N - 10) / 7
+            "The secret number is how many feet are in {:.1} yards",
+            Box::new(|x| x / 3.0), // Simplified formula: N = S/3
+        ),
+        (
+            "You save the secret number dollars each week for {:.1} weeks to buy a $60 item",
+            Box::new(|x| 60.0 / x), // Simplified formula: N = 60/S
         ),
         (
             "The secret number is 10 positive steps from the number S + 5",
-            Box::new(|x| x - 10.0 - 5.0), // Simplified formula: S = N + 15
+            Box::new(|x| x - 10.0 - 5.0), // Simplified formula: N = S + 15
         ),
         (
-            "The secret number is 20 negative steps from the number S - 3",
-            Box::new(|x| x + 20.0 + 3.0), // Simplified formula: S = N - 23
+            "A pizza is cut into the secret number slices and you eat {:.1} slices (half the pizza)",
+            Box::new(|x| x * 2.0), // Simplified formula: N = S * 2
         ),
         (
             "The secret number is 15 positive steps from the number S * 2",
-            Box::new(|x| x / 2.0 - 15.0), // Simplified formula: S = 2(N + 15)
+            Box::new(|x| x / 2.0 - 15.0), // Simplified formula: N = 2(S + 15)
         ),
         (
-            "The secret number is 30 negative steps from the number S / 3",
-            Box::new(|x| x * 3.0 + 30.0), // Simplified formula: S = (N - 30) / 3
+            "You type the secret number words per minute and finish a {:.1} word essay in 10 minutes",
+            Box::new(|x| x / 10.0), // Simplified formula: N = S/10
         ),
         (
-            "The secret number is 12 positive steps from the number S + 4",
-            Box::new(|x| x - 12.0 - 4.0), // Simplified formula: S = N + 16
+            "The secret number is how many inches are in {:.1} feet",
+            Box::new(|x| x / 12.0), // Simplified formula: N = S/12
         ),
         (
-            "The secret number is 18 negative steps from the number S - 6",
-            Box::new(|x| x + 18.0 + 6.0), // Simplified formula: S = N - 24
+            "A garden has {:.1} flowers planted in rows of the secret number flowers each",
+            Box::new(|x| x / 6.0), // Simplified formula: N = S/6 (assuming 6 per row)
         ),
         (
             "The secret number is 22 positive steps from the number S * 5",
-            Box::new(|x| x / 5.0 - 22.0), // Simplified formula: S = 5(N + 22)
+            Box::new(|x| x / 5.0 - 22.0), // Simplified formula: N = 5(S + 22)
         ),
         (
-            "The secret number is 28 negative steps from the number S / 4",
-            Box::new(|x| x * 4.0 + 28.0), // Simplified formula: S = (N - 28) / 4
+            "You drive the secret number miles in 2 hours at {:.1} mph",
+            Box::new(|x| x * 2.0), // Simplified formula: N = S * 2
+        ),
+        (
+            "The secret number is how many ounces are in {:.1} pounds",
+            Box::new(|x| x / 16.0), // Simplified formula: N = S/16
+        ),
+        (
+            "A parking lot has {:.1} cars parked in rows of the secret number cars each",
+            Box::new(|x| x / 10.0), // Simplified formula: N = S/10 (assuming 10 per row)
         ),
         (
             "The secret number is 14 positive steps from the number S + 7",
-            Box::new(|x| x - 14.0 - 7.0), // Simplified formula: S = N + 21
+            Box::new(|x| x - 14.0 - 7.0), // Simplified formula: N = S + 21
+        ),
+        (
+            "You earn the secret number dollars per hour and work {:.1} hours for $200 total",
+            Box::new(|x| 200.0 / x), // Simplified formula: N = 200/S
         ),
         (
             "The secret number is 16 negative steps from the number S - 8",
-            Box::new(|x| x + 16.0 + 8.0), // Simplified formula: S = N - 24
+            Box::new(|x| x + 16.0 + 8.0), // Simplified formula: N = S - 24
         )
     ];
     
