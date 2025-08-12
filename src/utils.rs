@@ -57,8 +57,8 @@ fn easy_hint_chooser(secret_number: f64) {
      * - A hint string with a placeholder for the computed value
      * - A closure that computes the hint value based on the secret number
      */
-        ("The secret number is 5 positive steps from {}", Box::new(|x| x - 5.0)), // Simplified formula: S = N + 5
-        ("The secret number is 45 negative steps from {}", Box::new(|x| x + 45.0)), // Simplified formula: S = N - 45
+        ("The secret number is 3 positive steps from x + 2", Box::new(|x| x - 5.0)), // Simplified formula: S = N + 5
+        ("The secret number is 45 negative steps from x + 25", Box::new(|x| x + 45.0)), // Simplified formula: S = N - 45
         ("The secret number is 10 positive steps from {}", Box::new(|x| x - 10.0)), // Simplified formula: S = N + 10
         ("The secret number is 20 negative steps from {}", Box::new(|x| x + 20.0)), // Simplified formula: S = N - 20
         ("The secret number is 15 positive steps from {}", Box::new(|x| x - 15.0)), // Simplified formula: S = N + 15
