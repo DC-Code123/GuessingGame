@@ -57,44 +57,44 @@ fn easy_hint_chooser(secret_number: f64) {
      * - A hint string with a placeholder for the computed value
      * - A closure that computes the hint value based on the secret number
      */
-        ("The secret number is 3 positive steps from x + 2", Box::new(|x| x - 5.0)), // Simplified formula: S = N + 5
-        ("The secret number is 45 negative steps from x + 25", Box::new(|x| x + 45.0)), // Simplified formula: S = N - 45
-        ("The secret number is 10 positive steps from {}", Box::new(|x| x - 10.0)), // Simplified formula: S = N + 10
-        ("The secret number is 20 negative steps from {}", Box::new(|x| x + 20.0)), // Simplified formula: S = N - 20
-        ("The secret number is 15 positive steps from {}", Box::new(|x| x - 15.0)), // Simplified formula: S = N + 15
-        ("The secret number is 30 negative steps from {}", Box::new(|x| x + 30.0)), // Simplified formula: S = N - 30
-        ("The secret number is 12 positive steps from {}", Box::new(|x| x - 12.0)), // Simplified formula: S = N + 12
-        ("The secret number is 18 negative steps from {}", Box::new(|x| x + 18.0)), // Simplified formula: S = N - 18
-        ("The secret number is 22 positive steps from {}", Box::new(|x| x - 22.0)), // Simplified formula: S = N + 22
-        ("The secret number is 28 negative steps from {}", Box::new(|x| x + 28.0)), // Simplified formula: S = N - 28
-        ("The secret number is 14 positive steps from {}", Box::new(|x| x - 14.0)), // Simplified formula: S = N + 14
+        ("The secret number is 5 positive steps from {:.1}", Box::new(|x| x - 5.0)), // Direct steps: Secret is 5 steps above this value
+        ("The secret number is 45 negative steps from {:.1}", Box::new(|x| x + 45.0)), // Direct steps: Secret is 45 steps below this value
+        ("The secret number is 10 positive steps from {:.1}", Box::new(|x| x - 10.0)), // Direct steps: Secret is 10 steps above this value
+        ("The secret number is 20 negative steps from {:.1}", Box::new(|x| x + 20.0)), // Direct steps: Secret is 20 steps below this value
+        ("The secret number is 15 positive steps from {:.1}", Box::new(|x| x - 15.0)), // Direct steps: Secret is 15 steps above this value
+        ("The secret number is 30 negative steps from {:.1}", Box::new(|x| x + 30.0)), // Direct steps: Secret is 30 steps below this value
+        ("The secret number is 12 positive steps from {:.1}", Box::new(|x| x - 12.0)), // Direct steps: Secret is 12 steps above this value
+        ("The secret number is 18 negative steps from {:.1}", Box::new(|x| x + 18.0)), // Direct steps: Secret is 18 steps below this value
+        ("The secret number is 22 positive steps from {:.1}", Box::new(|x| x - 22.0)), // Direct steps: Secret is 22 steps above this value
+        ("The secret number is 28 negative steps from {:.1}", Box::new(|x| x + 28.0)), // Direct steps: Secret is 28 steps below this value
+        ("The secret number is 14 positive steps from {:.1}", Box::new(|x| x - 14.0)), // Direct steps: Secret is 14 steps above this value
         (
-            "A number S² is 25 positive steps from the secret number(S is {})",
-            Box::new(|x| x.sqrt() - 25.0), // Simplified formula: S = (N + 25)²
+            "The secret number squared is 25 positive steps from {:.1}",
+            Box::new(|x| (x - 25.0).sqrt()), // Direct steps: Secret² is 25 steps above this value
         ),
         (
-            "A number S³ is 10 negative steps from the secret number(S is {})",
-            Box::new(|x| x.cbrt() + 10.0), // Simplified formula: S = (N - 10)³
+            "The secret number to the power of 3 is 10 negative steps from {:.1}",
+            Box::new(|x| (x + 10.0).cbrt()), // Direct steps: Secret³ is 10 steps below this value
         ),
-        ("A number S + 3 is 5 positive steps from the secret number", Box::new(|x| x - 5.0 - 3.0)), // Simplified formula: S = N + 8
+        ("The secret number plus 3 is 5 positive steps from {:.1}", Box::new(|x| x - 5.0 - 3.0)), // Direct steps: (Secret + 3) is 5 steps above this value
         (
-            "A number S - 4 is 20 negative steps from the secret number",
-            Box::new(|x| x + 20.0 + 4.0), // Simplified formula: S = N - 24
-        ),
-        (
-            "A number S * 2 is 15 positive steps from the secret number",
-            Box::new(|x| x / 2.0 - 15.0), // Simplified formula: S = 2(N + 15)
+            "The secret number minus 4 is 20 negative steps from {:.1}",
+            Box::new(|x| x + 20.0 + 4.0), // Direct steps: (Secret - 4) is 20 steps below this value
         ),
         (
-            "A number S / 3 is 30 negative steps from the secret_number",
-            Box::new(|x| x * 3.0 + 30.0), // Simplified formula: S = (N - 30) / 3
+            "The secret number times 2 is 15 positive steps from {:.1}",
+            Box::new(|x| (x - 15.0) / 2.0), // Direct steps: (Secret × 2) is 15 steps above this value
         ),
         (
-            "The secret number is 8 positive steps from the number S + 1",
-            Box::new(|x| x - 8.0 - 1.0), // Simplified formula: S = N + 9
+            "The secret number divided by 3 is 30 negative steps from {:.1}",
+            Box::new(|x| (x + 30.0) * 3.0), // Direct steps: (Secret ÷ 3) is 30 steps below this value
         ),
         (
-            "A number is called p = S - 2^3 and that number is 24 negative steps from the secret_number",
+            "The secret number is 8 positive steps from a value that equals the secret number plus 1, that value is {:.1}",
+            Box::new(|x| x - 8.0 - 1.0), // Direct steps: Secret is 8 steps above (Secret + 1)
+        ),
+        (
+            "The secret number minus 2 to the power of 3 is 24 negative steps from {:.1}",
             Box::new(|x| x - 8.0 + 24.0), // Simplified formula: S = N - 16
         ),
         (
