@@ -57,45 +57,45 @@ fn easy_hint_chooser(secret_number: f64) {
      * - A hint string with a placeholder for the computed value
      * - A closure that computes the hint value based on the secret number
      */
-        ("The secret number is 5 positive steps from {:.1}", Box::new(|x| x - 5.0)), // Direct steps: Secret is 5 steps above this value
-        ("The secret number is 45 negative steps from {:.1}", Box::new(|x| x + 45.0)), // Direct steps: Secret is 45 steps below this value
-        ("The secret number is 10 positive steps from {:.1}", Box::new(|x| x - 10.0)), // Direct steps: Secret is 10 steps above this value
-        ("The secret number is 20 negative steps from {:.1}", Box::new(|x| x + 20.0)), // Direct steps: Secret is 20 steps below this value
-        ("The secret number is 15 positive steps from {:.1}", Box::new(|x| x - 15.0)), // Direct steps: Secret is 15 steps above this value
-        ("The secret number is 30 negative steps from {:.1}", Box::new(|x| x + 30.0)), // Direct steps: Secret is 30 steps below this value
-        ("The secret number is 12 positive steps from {:.1}", Box::new(|x| x - 12.0)), // Direct steps: Secret is 12 steps above this value
-        ("The secret number is 18 negative steps from {:.1}", Box::new(|x| x + 18.0)), // Direct steps: Secret is 18 steps below this value
-        ("The secret number is 22 positive steps from {:.1}", Box::new(|x| x - 22.0)), // Direct steps: Secret is 22 steps above this value
-        ("The secret number is 28 negative steps from {:.1}", Box::new(|x| x + 28.0)), // Direct steps: Secret is 28 steps below this value
-        ("The secret number is 14 positive steps from {:.1}", Box::new(|x| x - 14.0)), // Direct steps: Secret is 14 steps above this value
+        ("If you add 7 to the secret number, you get {:.1}", Box::new(|x| x + 7.0)), // Real world: Simple addition
+        ("The secret number is your age if you were born in the year {:.0}", Box::new(|x| 2024.0 - x)), // Real world: Age calculation
+        ("A pizza costs $12 and you have ${:.1}, the secret number is how many pizzas you can buy", Box::new(|x| x / 12.0)), // Real world: Division problem
+        ("The secret number is the temperature in Celsius when it's {:.1}°F", Box::new(|x| (x - 32.0) * 5.0 / 9.0)), // Real world: Temperature conversion
+        ("You have {:.1} quarters, the secret number is how many dollars that equals", Box::new(|x| x / 4.0)), // Real world: Money conversion
+        ("The secret number is 15 positive steps from {:.1}", Box::new(|x| x - 15.0)), // Keep original: Direct steps
+        ("If you walk {:.1} miles at 3 mph, the secret number is how many hours it takes", Box::new(|x| x / 3.0)), // Real world: Speed/distance/time
+        ("The secret number is 18 negative steps from {:.1}", Box::new(|x| x + 18.0)), // Keep original: Direct steps
+        ("A rectangle has area {:.1} and width 4, the secret number is its length", Box::new(|x| x / 4.0)), // Real world: Geometry
+        ("The secret number is how many dozens are in {:.1} items", Box::new(|x| x / 12.0)), // Real world: Counting
+        ("If gas costs $3 per gallon and you spend ${:.1}, the secret number is gallons bought", Box::new(|x| x / 3.0)), // Real world: Gas purchase
         (
-            "The secret number squared is 25 positive steps from {:.1}",
-            Box::new(|x| (x - 25.0).sqrt()), // Direct steps: Secret² is 25 steps above this value
+            "The secret number squared equals the number of days in {:.1} years (non-leap)",
+            Box::new(|x| (x * 365.0).sqrt()), // Real world: Time calculation with squares
         ),
         (
-            "The secret number to the power of 3 is 10 negative steps from {:.1}",
-            Box::new(|x| (x + 10.0).cbrt()), // Direct steps: Secret³ is 10 steps below this value
+            "The secret number cubed is the volume of a cube with side length {:.1}",
+            Box::new(|x| x.cbrt()), // Real world: Volume calculation
         ),
-        ("The secret number plus 3 is 5 positive steps from {:.1}", Box::new(|x| x - 5.0 - 3.0)), // Direct steps: (Secret + 3) is 5 steps above this value
+        ("You score the secret number points per game and play 3 games for {:.1} total points", Box::new(|x| x / 3.0)), // Real world: Sports scoring
         (
-            "The secret number minus 4 is 20 negative steps from {:.1}",
-            Box::new(|x| x + 20.0 + 4.0), // Direct steps: (Secret - 4) is 20 steps below this value
-        ),
-        (
-            "The secret number times 2 is 15 positive steps from {:.1}",
-            Box::new(|x| (x - 15.0) / 2.0), // Direct steps: (Secret × 2) is 15 steps above this value
+            "The secret number is your hourly wage if you earn ${:.1} for 4 hours of work",
+            Box::new(|x| x / 4.0), // Real world: Wage calculation
         ),
         (
-            "The secret number divided by 3 is 30 negative steps from {:.1}",
-            Box::new(|x| (x + 30.0) * 3.0), // Direct steps: (Secret ÷ 3) is 30 steps below this value
+            "A car travels the secret number mph for 2 hours to go {:.1} miles",
+            Box::new(|x| x / 2.0), // Real world: Speed calculation
         ),
         (
-            "The secret number is 8 positive steps from a value that equals the secret number plus 1, that value is {:.1}",
-            Box::new(|x| x - 8.0 - 1.0), // Direct steps: Secret is 8 steps above (Secret + 1)
+            "The secret number is 30 negative steps from {:.1}",
+            Box::new(|x| x + 30.0), // Keep original: Direct steps
         ),
         (
-            "The secret number minus 2 to the power of 3 is 24 negative steps from {:.1}",
-            Box::new(|x| x - 8.0 + 24.0), // Simplified formula: S = N - 16
+            "You buy the secret number apples at $0.50 each and spend ${:.1}",
+            Box::new(|x| x / 0.5), // Real world: Shopping
+        ),
+        (
+            "The secret number is the side length of a square with perimeter {:.1}",
+            Box::new(|x| x / 4.0), // Real world: Geometry
         ),
         (
             "The secret number is 16 negative steps from the number S + 4",
