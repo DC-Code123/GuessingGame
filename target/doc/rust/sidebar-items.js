@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["exit_game","get_hint_choice","get_retry_choice","main"],"mod":["utils"]};

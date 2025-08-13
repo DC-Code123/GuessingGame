@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["choose_hint","easy_hint_chooser","end_situation_handler","game_loop","gen_rand","hard_hint_chooser"]};
