@@ -93,7 +93,7 @@ fn get_retry_choice() -> i32 {
     println!("1. Try same number again");
     println!("2. Get a new random number");
     println!("0. Quit game");
-    print!("Your choice (0-2): ");
+    println!("Your choice (0-2): ");
     
     let mut choice = String::new();
     io::stdin().read_line(&mut choice).expect("Failed to read input");

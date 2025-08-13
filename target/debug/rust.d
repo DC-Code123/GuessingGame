@@ -1,1 +1,1 @@
-/workspaces/GuessingGame/target/debug/rust: /workspaces/GuessingGame/src/main.rs /workspaces/GuessingGame/src/utils.rs
+/home/runner/workspace/target/debug/rust: /home/runner/workspace/src/main.rs /home/runner/workspace/src/utils.rs
