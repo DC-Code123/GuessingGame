@@ -8,13 +8,46 @@
 use rand::Rng;
 use rand::seq::IndexedRandom;
 use colored::Colorize;
-use std::io;
+use std::{f64, io};
 use std::cmp::Ordering;
 
 /// Generates random number between 1.0 and 100.0
 /// Uses thread-local random number generator
-pub fn gen_rand() -> f64 {
-    rand::rng().random_range(1.0..=100.0)
+pub fn gen_rand(starting_number: f64, ending_number: f64) -> f64 {
+    rand::rng().random_range(starting_number..=ending_number)
+}
+
+pub fn game_range_adjuster() -> (f64, f64) {
+    use std::io::{self, Write};
+    loop {
+        println!("\nEnter your desired guessing range.");
+        print!("Start (min, >= 1): ");
+        io::stdout().flush().unwrap();
+        let mut start = String::new();
+        io::stdin().read_line(&mut start).expect("Failed to read input");
+
+        print!("End (max, <= 10000): ");
+        io::stdout().flush().unwrap();
+        let mut end = String::new();
+        io::stdin().read_line(&mut end).expect("Failed to read input");
+
+        let start: f64 = match start.trim().parse() {
+            Ok(n) if n >= 1.0 => n,
+            _ => {
+                println!("Invalid start value. Please enter a number >= 1.");
+                continue;
+            }
+        };
+        let end: f64 = match end.trim().parse() {
+            Ok(n) if n > start && n <= 10000.0 => n,
+            _ => {
+                println!("Invalid end value. Please enter a number > start and <= 10000.");
+                continue;
+            }
+        };
+        println!("Range set: {:.1} to {:.1}", start, end);
+        return (start, end);
+    }
 }
 
 /// Handles game end scenarios
@@ -205,7 +238,7 @@ fn easy_hint_chooser(secret_number: f64) {
     let calculated_value = expr(secret_number);
     let formatted_hint = hint.replace("{:.1}", &format!("{:.1}", calculated_value));
     println!("{}: {} = {:.2}", "Easy Hint".blue(), formatted_hint, calculated_value);
-}
+} 
 
 /// Provides complex mathematical hints
 /// Parameters:
